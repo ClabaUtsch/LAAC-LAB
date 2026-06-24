@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Virtualenv
+venv/
+.venv/
+env/
+
+# Banco SQLite
+*.db
+*.sqlite3
+
+# Variáveis de ambiente
+.env
+
+# Migrations geradas (descomente se não quiser versionar)
+# migrations/
+
+# IDE
+.vscode/
+.idea/
