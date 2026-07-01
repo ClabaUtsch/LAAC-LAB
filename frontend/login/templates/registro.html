@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Registrar — LAAC LAB{% endblock %}
+
+{% block content %}
+<div class="panel-wrap">
+    <div class="panel panel-wide">
+        <div class="panel-header">
+            <span class="eyebrow">NOVO RECRUTA</span>
+            <h1>Criar conta</h1>
+            <p class="subtitle">Cadastre-se para reportar bugs, avaliar jogos e entrar no fórum.</p>
+        </div>
+
+        <form method="POST" class="form" novalidate>
+            <div class="field">
+                <label for="nome_usuario">Nome de usuário</label>
+                <input type="text" id="nome_usuario" name="nome_usuario" required minlength="3"
+                       placeholder="ex: furia007" autocomplete="username"
+                       value="{{ nome_usuario or '' }}">
+            </div>
+
+            <div class="field">
+                <label for="email">E-mail</label>
+                <input type="email" id="email" name="email" required
+                       placeholder="joao@gmail.com" autocomplete="email"
+                       value="{{ email or '' }}">
+            </div>
+
+            <div class="field">
+                <label for="data_nascimento">Data de nascimento</label>
+                <input type="date" id="data_nascimento" name="data_nascimento" required
+                       value="{{ data_nascimento or '' }}">
+                <span class="field-hint">É preciso ter 16 anos ou mais para criar uma conta.</span>
+            </div>
+
+            <div class="field-row">
+                <div class="field">
+                    <label for="senha">Senha</label>
+                    <input type="password" id="senha" name="senha" required minlength="6"
+                           placeholder="mín. 6 caracteres" autocomplete="new-password">
+                </div>
+                <div class="field">
+                    <label for="confirmar_senha">Confirmar senha</label>
+                    <input type="password" id="confirmar_senha" name="confirmar_senha" required minlength="6"
+                           placeholder="repita a senha" autocomplete="new-password">
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary">
+                <span>Criar conta</span>
+                <span class="btn-arrow">›</span>
+            </button>
+        </form>
+
+        <div class="panel-divider"><span>ou</span></div>
+
+        <p class="panel-foot">
+            Já tem conta? <a href="{{ url_for('login') }}">Fazer login</a>
+        </p>
+    </div>
+
+    <p class="panel-caption">// idade_minima: <span class="caption-accent">16</span></p>
+</div>
+{% endblock %}
