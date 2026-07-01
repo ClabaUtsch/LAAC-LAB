@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Login — LAAC LAB{% endblock %}
+
+{% block content %}
+<div class="panel-wrap">
+    <div class="panel">
+        <div class="panel-header">
+            <span class="eyebrow">ACESSO RESTRITO</span>
+            <h1>Iniciar Sessão</h1>
+            <p class="subtitle">Identifique-se para continuar.</p>
+        </div>
+
+        <form method="POST" class="form" novalidate>
+            <div class="field">
+                <label for="identificador">Usuário ou e-mail</label>
+                <input type="text" id="identificador" name="identificador" required
+                       placeholder="furia007 ou joao@gmail.com" autocomplete="username">
+            </div>
+
+            <div class="field">
+                <label for="senha">Senha</label>
+                <div class="input-with-action">
+                    <input type="password" id="senha" name="senha" required
+                           placeholder="••••••••" autocomplete="current-password">
+                    <button type="button" class="toggle-pass" data-target="senha" aria-label="Mostrar senha">👁</button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary">
+                <span>Entrar</span>
+                <span class="btn-arrow">›</span>
+            </button>
+        </form>
+
+        <div class="panel-divider"><span>ou</span></div>
+
+        <p class="panel-foot">
+            Ainda não tem conta? <a href="{{ url_for('registro') }}">Registre-se no LAB</a>
+        </p>
+    </div>
+
+    <p class="panel-caption">// status_bug: <span class="caption-accent">aguardando_login</span></p>
+</div>
+{% endblock %}
