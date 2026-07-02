@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}LAAC LAB{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="crt-overlay" aria-hidden="true"></div>
+
+<div class="page">
+
+    <header class="brand">
+        <a href="{{ url_for('index') }}" class="brand-link">
+            <svg class="brand-logo" viewBox="0 0 279.72 271.95" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <linearGradient id="logoGrad" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#8C0313"/>
+      <stop offset="55%" stop-color="#B3122A"/>
+      <stop offset="100%" stop-color="#E8041B"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(-1.099889,273.000000) scale(1.000000,-1.000000)"
+fill="url(#logoGrad)" stroke="none">
+<path d="M85 271 c-2 -1 -3 -10 -1 -12 0 -1 3 -2 6 -4 7 -4 7 -5 7 -27 l-1
+-19 -10 -20 c-6 -11 -13 -24 -16 -28 -16 -32 -51 -96 -64 -121 -7 -12 -6 -23
+1 -32 2 -2 5 -4 7 -5 4 -2 11 -2 127 -2 l123 0 4 2 c9 5 14 15 13 25 -1 5 -7
+18 -18 37 -2 4 -6 11 -9 16 -5 10 -24 43 -30 54 -3 5 -5 8 -5 8 0 0 -1 -3 -2
+-7 -1 -8 -3 -15 -8 -24 -3 -6 -4 -9 -2 -11 0 0 2 -4 5 -7 2 -4 8 -17 15 -28 6
+-12 11 -23 12 -24 0 -2 0 -3 -2 -4 -2 -2 -12 -2 -100 -2 -54 0 -98 0 -98 1 0
+0 21 40 25 48 1 1 6 12 12 23 6 11 13 25 17 32 6 12 22 43 30 57 l3 7 0 33 c0
+29 0 33 -2 34 -1 2 -4 2 -20 2 -15 0 -18 0 -19 -2z"/>
+<path d="M156 270 c-1 -2 -1 -17 -1 -36 l0 -34 -14 -27 c-8 -14 -15 -28 -16
+-30 -1 -1 -4 -7 -7 -13 -3 -5 -6 -11 -7 -12 -1 -2 -6 -12 -12 -22 -5 -10 -11
+-22 -14 -27 l-4 -8 17 0 18 0 6 11 6 12 16 0 c13 1 16 1 22 3 10 4 17 9 24 16
+12 12 17 24 18 42 0 7 0 13 -1 17 -1 7 -2 9 -14 30 l-7 13 -1 22 0 22 3 3 c2
+2 5 4 6 5 3 2 3 3 3 8 l0 7 -20 0 -20 0 -1 -2z m23 -115 c4 -9 5 -13 2 -20 -4
+-13 -19 -24 -34 -24 -3 0 -5 0 -5 0 0 1 3 7 8 15 4 8 10 21 14 28 8 15 7 15
+15 1z"/>
+<path d="M252 260 c-1 -1 -1 -4 -1 -7 l1 -4 6 0 6 0 0 5 c0 4 0 6 -1 6 -2 2
+-10 1 -11 0z"/>
+<path d="M218 243 c0 -1 0 -5 0 -9 l1 -6 7 -1 c9 0 9 0 9 8 0 8 -1 9 -9 9 -5
+0 -7 0 -8 -1z"/>
+<path d="M243 224 c-1 0 -1 -3 -1 -11 l1 -10 10 0 11 0 0 10 c0 8 0 11 -1 11
+-1 1 -5 1 -10 1 -5 0 -9 0 -10 -1z"/>
+<path d="M209 197 c-1 0 -1 -21 0 -23 0 -2 2 -2 13 -2 14 0 13 -1 13 15 l0 11
+-13 0 c-7 0 -13 0 -13 -1z"/>
+</g>
+</svg>
+            <span class="brand-text">
+                <span class="brand-name">LAAC<span class="brand-dot">_</span>LAB</span>
+                <span class="brand-tag">QA // GAME TESTING DIVISION</span>
+            </span>
+        </a>
+    </header>
+
+    <main class="stage">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-stack">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">
+                            <span class="flash-icon">{% if category == 'success' %}✓{% elif category == 'danger' %}!{% elif category == 'warning' %}⚠{% else %}i{% endif %}</span>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <span>LAAC_LAB © {{ 2026 }} — Onde os bugs vão pra morrer.</span>
+    </footer>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
