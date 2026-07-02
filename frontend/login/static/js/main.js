@@ -12,24 +12,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Aplica a capa do jogo via JS (evita montar CSS a partir de texto do usuário no HTML)
-    document.querySelectorAll('[data-cover-url]').forEach(function (el) {
-        var url = el.dataset.coverUrl;
-        if (url) {
-            el.style.backgroundImage = 'url(' + JSON.stringify(url) + ')';
-        }
-    });
-
-    // Confirmação antes de submeter formulários destrutivos (exclusão)
-    document.querySelectorAll('.js-confirm-form').forEach(function (form) {
-        form.addEventListener('submit', function (evt) {
-            var mensagem = form.dataset.confirmMessage || 'Tem certeza?';
-            if (!window.confirm(mensagem)) {
-                evt.preventDefault();
-            }
-        });
-    });
-
     // Auto-fechar mensagens flash após 5s
     var flashes = document.querySelectorAll('.flash');
     if (flashes.length) {
