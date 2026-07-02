@@ -57,12 +57,24 @@ fill="url(#logoGrad)" stroke="none">
                 <span class="brand-tag">QA // GAME TESTING DIVISION</span>
             </span>
         </a>
+
+        <nav class="nav-links">
+            <a href="{{ url_for('jogos_listar') }}" class="{{ 'nav-active' if request.endpoint and request.endpoint.startswith('jogos') else '' }}">Jogos</a>
+            <a href="{{ url_for('usuarios_listar') }}" class="{{ 'nav-active' if request.endpoint == 'usuarios_listar' else '' }}">Usuários</a>
+            {% if session.usuario %}
+                <a href="{{ url_for('dashboard') }}" class="{{ 'nav-active' if request.endpoint == 'dashboard' else '' }}">Dashboard</a>
+                <a href="{{ url_for('perfil') }}" class="{{ 'nav-active' if request.endpoint and request.endpoint.startswith('perfil') else '' }}">{{ session.usuario.nome_usuario }}</a>
+                <a href="{{ url_for('logout') }}" class="nav-logout">Sair</a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="{{ 'nav-active' if request.endpoint == 'login' else '' }}">Entrar</a>
+            {% endif %}
+        </nav>
     </header>
 
-    <main class="stage">
+    <main class="stage {% block stage_class %}{% endblock %}">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="flash-stack">
+                <div class="flash-stack {% block flash_class %}{% endblock %}">
                     {% for category, message in messages %}
                         <div class="flash flash-{{ category }}">
                             <span class="flash-icon">{% if category == 'success' %}✓{% elif category == 'danger' %}!{% elif category == 'warning' %}⚠{% else %}i{% endif %}</span>
