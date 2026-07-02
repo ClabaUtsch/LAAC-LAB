@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}{{ jogo.nome }} — LAAC LAB{% endblock %}
+{% block stage_class %}stage-wide{% endblock %}
+{% block flash_class %}flash-stack-wide{% endblock %}
+
+{% block content %}
+<div class="section-wrap">
+    <div class="section-header">
+        <div>
+            <span class="eyebrow">FICHA DO JOGO</span>
+            <h1>{{ jogo.nome }}</h1>
+        </div>
+        {% if session.usuario %}
+            <div class="panel-actions">
+                <a href="{{ url_for('jogos_editar', jogo_id=jogo.id) }}" class="btn-secondary">Editar</a>
+                <form method="POST" action="{{ url_for('jogos_excluir', jogo_id=jogo.id) }}" class="inline js-confirm-form"
+                      data-confirm-message="Tem certeza que deseja excluir &quot;{{ jogo.nome }}&quot;? Essa ação não pode ser desfeita.">
+                    <button type="submit" class="btn-danger">Excluir</button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="panel panel-wide detail-panel">
+        {% if jogo.capa_url %}
+            <div class="game-card-cover" data-cover-url="{{ jogo.capa_url }}" style="border-radius: 10px;"></div>
+        {% endif %}
+        <dl>
+            <div class="detail-row"><dt>Gênero</dt><dd>{{ jogo.genero or '—' }}</dd></div>
+            <div class="detail-row"><dt>Classificação</dt><dd>{{ jogo.classificacao or '—' }}</dd></div>
+            <div class="detail-row"><dt>Desenvolvedora</dt><dd>{{ jogo.desenvolvedora or '—' }}</dd></div>
+            <div class="detail-row"><dt>Lançamento</dt><dd>{{ jogo.data_lancamento or '—' }}</dd></div>
+            <div class="detail-row"><dt>Descrição</dt><dd>{{ jogo.descricao or '—' }}</dd></div>
+        </dl>
+    </div>
+
+    <p><a href="{{ url_for('jogos_listar') }}" class="btn-ghost">‹ Voltar ao catálogo</a></p>
+</div>
+{% endblock %}

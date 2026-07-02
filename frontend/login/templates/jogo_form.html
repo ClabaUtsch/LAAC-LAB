@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar jogo' if modo == 'editar' else 'Cadastrar jogo' }} — LAAC LAB{% endblock %}
+
+{% block content %}
+<div class="panel-wrap">
+    <div class="panel panel-wide">
+        <div class="panel-header">
+            <span class="eyebrow">{{ 'EDIÇÃO' if modo == 'editar' else 'NOVO REGISTRO' }}</span>
+            <h1>{{ 'Editar jogo' if modo == 'editar' else 'Cadastrar jogo' }}</h1>
+            <p class="subtitle">Preencha os dados do jogo para o catálogo do Bugômetro.</p>
+        </div>
+
+        <form method="POST" class="form" novalidate>
+            <div class="field">
+                <label for="nome">Nome do jogo</label>
+                <input type="text" id="nome" name="nome" required
+                       placeholder="ex: Hollow Knight" value="{{ jogo.nome or '' }}">
+            </div>
+
+            <div class="field-row">
+                <div class="field">
+                    <label for="genero">Gênero</label>
+                    <input type="text" id="genero" name="genero"
+                           placeholder="ex: Metroidvania" value="{{ jogo.genero or '' }}">
+                </div>
+                <div class="field">
+                    <label for="classificacao">Classificação</label>
+                    <input type="text" id="classificacao" name="classificacao"
+                           placeholder="ex: 12+" value="{{ jogo.classificacao or '' }}">
+                </div>
+            </div>
+
+            <div class="field-row">
+                <div class="field">
+                    <label for="desenvolvedora">Desenvolvedora</label>
+                    <input type="text" id="desenvolvedora" name="desenvolvedora"
+                           placeholder="ex: Team Cherry" value="{{ jogo.desenvolvedora or '' }}">
+                </div>
+                <div class="field">
+                    <label for="data_lancamento">Data de lançamento</label>
+                    <input type="date" id="data_lancamento" name="data_lancamento"
+                           value="{{ jogo.data_lancamento or '' }}">
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="capa_url">URL da capa</label>
+                <input type="url" id="capa_url" name="capa_url"
+                       placeholder="https://..." value="{{ jogo.capa_url or '' }}">
+            </div>
+
+            <div class="field">
+                <label for="descricao">Descrição</label>
+                <textarea id="descricao" name="descricao" class="field-textarea"
+                          placeholder="Sobre o jogo...">{{ jogo.descricao or '' }}</textarea>
+            </div>
+
+            <button type="submit" class="btn-primary">
+                <span>{{ 'Salvar alterações' if modo == 'editar' else 'Cadastrar jogo' }}</span>
+                <span class="btn-arrow">›</span>
+            </button>
+        </form>
+
+        <p class="panel-foot">
+            <a href="{{ url_for('jogos_listar') }}">‹ Voltar ao catálogo</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
