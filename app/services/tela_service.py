@@ -65,7 +65,7 @@ class TelaService:
     # ------------------------------------------------------------------
     def inicio(self, usuario_id: int) -> dict:
         favoritos = self._cartoes_favoritos(usuario_id)
-        alertas = self.alertas_servico.recentes(limite=4)
+        alertas = self.alertas_servico.recentes(limite=6)
 
         return {
             "banners": [self._banner(j) for j in self.jogos.destaques(limite=3)],
@@ -91,10 +91,16 @@ class TelaService:
                 "imagem_capa": "",
                 "arquivo_capa": "",
             }
+        imagem = jogo.capa_url or ""
+        arquivo = jogo.arquivo_capa or ""
+        if not imagem and not arquivo:
+            fotos = extras_do_slug(jogo.slug or "").get("imagens") or []
+            if fotos:
+                imagem = fotos[0].get("src") or ""
         return {
             "capa": self._capa(jogo),
-            "imagem_capa": jogo.capa_url or "",
-            "arquivo_capa": jogo.arquivo_capa or "",
+            "imagem_capa": imagem,
+            "arquivo_capa": arquivo,
         }
 
     def _banner(self, jogo) -> dict:

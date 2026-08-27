@@ -528,8 +528,8 @@ a { color: inherit; text-decoration: none; }
   background: var(--surface); border: 1px solid var(--border-soft);
   border-radius: var(--radius); overflow: hidden;
   display: flex; flex-direction: column;
-  flex: 0 0 300px;
-  min-width: 300px;
+  flex: 0 0 220px;
+  min-width: 220px;
   scroll-snap-align: start;
 }
 .update-card .cover { aspect-ratio: 16 / 9; height: auto; border-radius: 0; }

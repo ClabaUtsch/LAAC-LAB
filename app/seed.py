@@ -34,6 +34,7 @@ BIBLIOTECA_DEMO = [
     ("grand-theft", 930, 41, False),
     ("apex", 615, 27, False),
     ("valorant", 120, 9, False),
+    ("fortnite", 340, 15, False),
 ]
 
 #: (slug parcial, tipo, título, corpo)
@@ -55,6 +56,8 @@ ALERTAS_DEMO = [
     ("call-of-duty", "critica", "Servidores instáveis após o patch de ontem."),
     ("counter-strike", "instavel", "Queda de FPS relatada em mapas novos."),
     ("grand-theft", "atualizacao", "Atualização 1.6 disponível para download."),
+    ("apex", "instavel", "Fila ranqueada instável neste fim de semana."),
+    ("valorant", "atualizacao", "Novo episódio no ar: confira o patch notes."),
 ]
 
 #: (slug parcial, categoria, severidade, título, votos)
@@ -320,12 +323,20 @@ def _garantir_jogo(servicos, Jogo, bruto, admin):
     """Traduz as chaves em inglês do arquivo herdado e grava pelo Service,
     que gera slug e iniciais."""
     from app.services.jogo_service import gerar_slug
+    from app.services.midia_catalogo import extras_do_slug
 
     slug = bruto.get("slug") or gerar_slug(bruto["name"])
     existente = db.session.execute(
         db.select(Jogo).where(Jogo.slug == slug)
     ).scalars().first()
     if existente is not None:
+        capa = bruto.get("cover_image") or ""
+        if capa and not (existente.capa_url or existente.arquivo_capa):
+            existente.capa_url = capa
+        tempo = extras_do_slug(slug).get("tempo_medio") or ""
+        if tempo and not (existente.tempo_medio or "").strip():
+            existente.tempo_medio = tempo
+        db.session.commit()
         return existente
 
     # ServicoBase.criar devolve um dict serializado pelo schema de saída;
@@ -346,6 +357,7 @@ def _garantir_jogo(servicos, Jogo, bruto, admin):
             "curtidas": bruto.get("likes") or 0,
             "descurtidas": bruto.get("dislikes") or 0,
             "conquistas": bruto.get("achievements") or 0,
+            "tempo_medio": extras_do_slug(slug).get("tempo_medio") or "",
         },
         usuario=admin,
     )

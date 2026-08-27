@@ -590,7 +590,7 @@
     "steam_appid": null,
     "short_description": "Battle royale gratuito da Epic Games.",
     "about": "Fortnite é um jogo battle royale gratuito onde até 100 jogadores disputam para ser o último de pé, construindo estruturas e usando um arsenal variado. Recebe atualizações sazonais frequentes.",
-    "cover_image": "",
+    "cover_image": "/estatico/vitrine/fortnite/01.jpg",
     "cover": [
       "#3aa0d8",
       "#1a5a8f"
@@ -614,7 +614,7 @@
     "steam_appid": null,
     "short_description": "FPS tático 5v5 baseado em agentes, da Riot Games.",
     "about": "Valorant é um shooter tático 5v5 baseado em personagens, onde a precisão da mira encontra habilidades únicas de cada agente. Gratuito para jogar.",
-    "cover_image": "",
+    "cover_image": "/estatico/vitrine/valorant/01.jpg",
     "cover": [
       "#bd3b4a",
       "#2b3a3f"

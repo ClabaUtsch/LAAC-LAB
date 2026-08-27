@@ -328,6 +328,16 @@ def test_capa_vazia_recebe_o_gradiente_padrao(app, sessao):
     assert len(card["capa"]) == 2
 
 
+def test_card_sem_capa_usa_foto_da_vitrine(app, sessao):
+    jogo = Jogo(nome="Valorant", slug="valorant", nome_busca="valorant")
+    sessao.add(jogo)
+    sessao.commit()
+    from app.composicao import montar_servicos
+
+    card = montar_servicos().jogos.montar_card(jogo, favorito=False, na_biblioteca=False)
+    assert card["imagem_capa"].startswith("/estatico/vitrine/valorant/")
+
+
 def test_criar_jogo_gera_slug_e_iniciais(app, admin):
     from app.composicao import montar_servicos
 

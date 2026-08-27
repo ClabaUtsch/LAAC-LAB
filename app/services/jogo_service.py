@@ -143,6 +143,12 @@ class JogoService(ServicoBase):
         gradiente = jogo.capa_gradiente or None
         if not gradiente or len(gradiente) < 2:
             gradiente = CAPA_PADRAO
+        imagem = jogo.capa_url or ""
+        arquivo = jogo.arquivo_capa or ""
+        if not imagem and not arquivo:
+            fotos = extras_do_slug(jogo.slug or "").get("imagens") or []
+            if fotos:
+                imagem = fotos[0].get("src") or ""
 
         return {
             # Toda escrita de tela exige `jogo_id`, e a tela só conhece o
@@ -154,8 +160,8 @@ class JogoService(ServicoBase):
             "pontuacao": pontuacao,
             "iniciais": jogo.iniciais or gerar_iniciais(jogo.nome),
             "capa": list(gradiente),
-            "imagem_capa": jogo.capa_url or "",
-            "arquivo_capa": jogo.arquivo_capa or "",
+            "imagem_capa": imagem,
+            "arquivo_capa": arquivo,
             "favorito": favorito,
             "na_biblioteca": na_biblioteca,
             "status": status_para(pontuacao),

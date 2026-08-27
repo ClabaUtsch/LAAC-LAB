@@ -359,6 +359,7 @@ def test_telas_principais_nao_nascem_vazias(app, semeado):
 
     inicio = cliente.get("/api/v1/telas/inicio", headers=cabecalho).get_json()
     assert inicio["banners"] and inicio["atualizacoes"] and inicio["favoritos"]
+    assert len(inicio["atualizacoes"]) >= 5
 
     bugometro = cliente.get("/api/v1/telas/bugometro", headers=cabecalho).get_json()
     assert bugometro["bugs"] and bugometro["top_instaveis"]

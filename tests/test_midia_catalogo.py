@@ -42,3 +42,4 @@ def test_catalogo_usa_youtube_como_o_palworld():
         assert (trailer.get("embed") or "").startswith("https://www.youtube.com/embed/"), slug
         assert extras["imagens"][0]["src"].startswith("/estatico/vitrine/"), slug
         assert all(f["src"].startswith("/estatico/vitrine/") for f in extras["imagens"]), slug
+        assert extras["tempo_medio"], slug
