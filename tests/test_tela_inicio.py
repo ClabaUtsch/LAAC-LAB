@@ -10,7 +10,8 @@ RAIZ = Path(__file__).resolve().parents[1]
 def test_pagina_tem_as_regioes_que_o_js_preenche(cliente):
     corpo = cliente.get("/").get_data(as_text=True)
     for regiao in ["home-hero", "hero-text", "hero-dots", "hero-img",
-                   "hero-prev", "hero-next", "home-updates",
+                   "hero-prev", "hero-next", "home-noticias",
+                   "news-title", "news-dots", "home-updates",
                    "home-trending", "home-favorites"]:
         assert f'id="{regiao}"' in corpo
 
@@ -99,6 +100,7 @@ def test_js_monta_carrossel_com_todos_os_banners():
     assert "iniciarCarrossel" in texto
     assert "setInterval" in texto
     assert "irParaBanner" in texto
+    assert "iniciarCarrosselNoticias" in texto
     assert "home-alert-msg" not in texto
 
 

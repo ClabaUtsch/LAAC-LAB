@@ -276,8 +276,10 @@ def test_alerta_tem_rotulo_nivel_e_icone(cliente, praca):
     assert critico["icone"] == "wifi"
     assert critico["jogo"] == "Cyberpunk 2077"
     assert critico["jogo_slug"] == "cyberpunk-2077"
+    assert "quando" in critico
     assert set(critico) == {
-        "id", "jogo", "jogo_slug", "severidade_rotulo", "nivel", "icone", "texto",
+        "id", "jogo", "jogo_slug", "severidade_rotulo", "nivel", "icone",
+        "texto", "quando", "capa", "imagem_capa", "arquivo_capa",
     }
 
 
@@ -335,6 +337,21 @@ def test_favoritos_do_alerta_sao_do_usuario_autenticado(cliente, praca):
 
 def test_alertas_sem_token_e_401(cliente):
     assert cliente.get("/api/v1/telas/alertas").status_code == 401
+
+
+def test_notificacoes_trazem_conta_e_alertas(cliente, praca):
+    corpo = cliente.get(
+        "/api/v1/eu/notificacoes", headers=praca["cabecalho"]
+    ).get_json()
+    assert set(corpo) == {"itens", "nao_lidas"}
+    tipos = {item["tipo"] for item in corpo["itens"]}
+    assert "conta" in tipos
+    assert "alerta" in tipos
+    assert corpo["nao_lidas"] == len(corpo["itens"])
+
+
+def test_notificacoes_sem_token_e_401(cliente):
+    assert cliente.get("/api/v1/eu/notificacoes").status_code == 401
 
 
 def test_cartao_de_praca_carrega_id(cliente, praca):

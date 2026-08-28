@@ -248,9 +248,12 @@ def cenario(cliente, app):
     }
 
 
-def test_inicio_devolve_as_cinco_chaves(cliente, cenario):
+def test_inicio_devolve_as_chaves_da_tela(cliente, cenario):
     corpo = cliente.get("/api/v1/telas/inicio", headers=cenario["cabecalho"]).get_json()
-    assert set(corpo) == {"banners", "atualizacoes", "assuntos", "favoritos", "alerta"}
+    assert set(corpo) == {
+        "banners", "atualizacoes", "noticias", "assuntos", "favoritos",
+        "mais_jogados", "alerta",
+    }
 
 
 def test_banners_sao_os_de_maior_metacritic(cliente, cenario):
@@ -285,7 +288,9 @@ def test_banco_vazio_devolve_listas_vazias_sem_quebrar(cliente):
     corpo = cliente.get("/api/v1/telas/inicio", headers=cabecalho).get_json()
     assert corpo["banners"] == []
     assert corpo["atualizacoes"] == []
+    assert corpo["noticias"] == []
     assert corpo["favoritos"] == []
+    assert corpo["mais_jogados"] == []
     assert corpo["alerta"]["mensagem"] == "Nenhum alerta recente."
 
 
@@ -323,6 +328,16 @@ def test_assuntos_trazem_grupo_constante(cliente, cenario):
     corpo = cliente.get("/api/v1/telas/inicio", headers=cenario["cabecalho"]).get_json()
     assert corpo["assuntos"][0]["grupo"] == "Últimos assuntos"
     assert corpo["assuntos"][0]["titulo"] == "Alguém mais com crash no ato 2?"
+
+
+def test_noticias_trazem_titulo_resumo_e_jogo(cliente, cenario):
+    corpo = cliente.get("/api/v1/telas/inicio", headers=cenario["cabecalho"]).get_json()
+    noticia = corpo["noticias"][0]
+    assert noticia["titulo"] == "Alguém mais com crash no ato 2?"
+    assert "resumo" in noticia
+    assert noticia["jogo"] == "Cyberpunk 2077"
+    assert noticia["jogo_slug"] == "cyberpunk-2077"
+    assert len(noticia["capa"]) == 2
 
 
 def test_topico_oculto_nao_aparece_nos_assuntos(cliente, cenario, app):

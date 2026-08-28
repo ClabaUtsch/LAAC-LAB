@@ -3,8 +3,8 @@
    /api/v1/telas/inicio e é renderizado com os helpers de Api.
 
    IMPORTANTE: a chave `jogo` na resposta é o NOME de exibição;
-   o slug é sempre `jogo_slug` em banners/atualizacoes. Os favoritos
-   vêm como cartão já pronto e linkam pelo `slug` (via Api.cartaoDeJogo). */
+   o slug é sempre `jogo_slug` em banners/atualizacoes. O ranking do
+   mês linka pelo `slug` do cartão. */
 
 /* Vertical three-dots glyph shown at the end of each trending row. */
 const TRENDING_GLYPH =
@@ -124,6 +124,94 @@ function iniciarCarrossel(banners) {
   }
 }
 
+let indiceNoticia = 0;
+
+function fonteCapaNoticia(item) {
+  return item.arquivo_capa || item.imagem_capa || "";
+}
+
+function aplicarNoticia(item) {
+  const bloco = document.getElementById("home-noticias");
+  bloco.style.background = `linear-gradient(135deg, ${item.capa[0]}, ${item.capa[1]})`;
+  document.getElementById("news-game").textContent = item.jogo || "Comunidade";
+  document.getElementById("news-title").textContent = item.titulo;
+  document.getElementById("news-text").textContent = item.resumo || "";
+  document.getElementById("news-when").textContent = item.quando || "";
+  const img = document.getElementById("news-img");
+  const fonte = fonteCapaNoticia(item);
+  if (fonte) {
+    img.src = fonte;
+    img.alt = item.titulo || "";
+    img.hidden = false;
+    img.onerror = () => {
+      img.hidden = true;
+    };
+  } else {
+    img.removeAttribute("src");
+    img.alt = "";
+    img.hidden = true;
+  }
+}
+
+function marcarPontoNoticia(indice) {
+  document.querySelectorAll("#news-dots span").forEach((ponto, i) => {
+    ponto.classList.toggle("on", i === indice);
+  });
+}
+
+function irParaNoticia(noticias, indice) {
+  indiceNoticia = (indice + noticias.length) % noticias.length;
+  aplicarNoticia(noticias[indiceNoticia]);
+  marcarPontoNoticia(indiceNoticia);
+}
+
+function iniciarCarrosselNoticias(noticias) {
+  const dots = document.getElementById("news-dots");
+  dots.replaceChildren();
+  noticias.forEach((item, i) => {
+    const ponto = Api.criar("span", i === 0 ? { class: "on" } : {});
+    ponto.setAttribute("role", "button");
+    ponto.setAttribute("tabindex", "0");
+    ponto.setAttribute("aria-label", "Mostrar " + item.titulo);
+    ponto.addEventListener("click", (evento) => {
+      evento.stopPropagation();
+      irParaNoticia(noticias, i);
+    });
+    ponto.addEventListener("keydown", (evento) => {
+      if (evento.key === "Enter" || evento.key === " ") {
+        evento.preventDefault();
+        ponto.click();
+      }
+    });
+    dots.append(ponto);
+  });
+
+  indiceNoticia = 0;
+  aplicarNoticia(noticias[0]);
+
+  const prev = document.getElementById("news-prev");
+  const next = document.getElementById("news-next");
+  const varios = noticias.length > 1;
+  prev.hidden = !varios;
+  next.hidden = !varios;
+  prev.onclick = (evento) => {
+    evento.stopPropagation();
+    irParaNoticia(noticias, indiceNoticia - 1);
+  };
+  next.onclick = (evento) => {
+    evento.stopPropagation();
+    irParaNoticia(noticias, indiceNoticia + 1);
+  };
+
+  const bloco = document.getElementById("home-noticias");
+  bloco.style.cursor = noticias[0].jogo_slug ? "pointer" : "";
+  bloco.onclick = (evento) => {
+    if (evento.target.closest("#news-dots") || evento.target.closest(".hero-arrow")) return;
+    const slug = noticias[indiceNoticia].jogo_slug;
+    if (slug) location.href = "/jogo/" + slug;
+  };
+}
+
 function capaDaAtualizacao(u) {
   /* atualizacoes[] usa `jogo` (nome de exibição). Api.capa espera
      `nome` e `iniciais` — montamos esse shape aqui. */
@@ -156,6 +244,20 @@ async function initHome() {
     document.getElementById("hero-img").hidden = true;
   } else {
     iniciarCarrossel(data.banners);
+  }
+
+  const noticias = data.noticias || [];
+  if (noticias.length === 0) {
+    document.getElementById("news-title").textContent = "Nenhuma notícia no momento.";
+    document.getElementById("news-text").textContent = "";
+    document.getElementById("news-game").textContent = "";
+    document.getElementById("news-when").textContent = "";
+    document.getElementById("news-dots").replaceChildren();
+    document.getElementById("news-prev").hidden = true;
+    document.getElementById("news-next").hidden = true;
+    document.getElementById("news-img").hidden = true;
+  } else {
+    iniciarCarrosselNoticias(noticias);
   }
 
   // --- Grade de atualizações recentes (capa real quando o jogo tem) ---
@@ -192,13 +294,22 @@ async function initHome() {
     });
   }
 
-  // --- Jogos favoritos: usa cartão canônico da API ---
+  // --- Pódio: 1º, 2º e 3º lugar; só o nome do jogo é um link ---
   const favorites = document.getElementById("home-favorites");
-  if (data.favoritos.length === 0) {
-    Api.vazio("home-favorites");
+  const ranking = (data.mais_jogados || []).slice(0, 3);
+  if (ranking.length === 0) {
+    Api.vazio("home-favorites", "Ainda não há ranking deste mês.");
   } else {
-    data.favoritos.forEach((g) => {
-      favorites.append(Api.cartaoDeJogo(g));
+    const posto = ["1º lugar", "2º lugar", "3º lugar"];
+    ranking.forEach((g, i) => {
+      favorites.append(
+        Api.criar(
+          "div",
+          { class: "podium-item" },
+          Api.criar("div", { class: "podium-place" }, posto[i]),
+          Api.criar("a", { class: "podium-name", href: "/jogo/" + g.slug }, g.nome)
+        )
+      );
     });
   }
 }

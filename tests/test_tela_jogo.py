@@ -32,6 +32,15 @@ def test_comentar_e_relatar_mandam_jogo_id():
     assert "jogo_id" in texto
 
 
+def test_voltar_de_alerta_aponta_para_alertas():
+    pagina = (RAIZ / "view/paginas/jogo.html").read_text(encoding="utf-8")
+    assert 'id="jg-voltar"' in pagina
+    js = _sem_comentarios((RAIZ / "view/estatico/js/jogo.js").read_text(encoding="utf-8"))
+    assert 'link.href = "/alertas"' in js
+    alertas = _sem_comentarios((RAIZ / "view/estatico/js/alertas.js").read_text(encoding="utf-8"))
+    assert "?de=alertas" in alertas
+
+
 def test_relatar_bug_titulo_longo_devolve_erros_por_campo_e_js_usa(cliente, app):
     """422 devolve {"erros": {campo: [msg]}}, nunca {"erro": msg}: usar
     só `e.message` aqui sempre caía no genérico "Não foi possível

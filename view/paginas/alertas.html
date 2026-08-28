@@ -80,9 +80,16 @@
         <div id="casca-busca-sugestoes" class="search-sugestoes" hidden></div>
       </div>
       <div class="topbar-actions">
-        <button class="icon-btn" aria-label="Notificações">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-        </button>
+        <div class="topbar-notify">
+          <button type="button" class="icon-btn" id="casca-sino" aria-label="Notificações" aria-expanded="false" aria-controls="casca-notificacoes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+            <span class="notify-dot" id="casca-sino-dot" hidden></span>
+          </button>
+          <div class="notify-panel" id="casca-notificacoes" hidden>
+            <p class="notify-panel-title">Notificações</p>
+            <div id="casca-notificacoes-lista"></div>
+          </div>
+        </div>
         <button class="icon-btn" id="alternar-tema" aria-label="Alternar tema">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
         </button>
@@ -101,7 +108,20 @@
             </div>
             <div>
               <h1>Alertas</h1>
-              <p>Fique por dentro das últimas atualizações e problemas nos jogos</p>
+              <p>Filtre por gravidade, busque pelo jogo e ative avisos no sino</p>
+            </div>
+          </div>
+
+          <div class="alert-toolbar">
+            <div class="search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:18px;height:18px"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <input id="al-busca" type="search" placeholder="Buscar alerta ou jogo…" aria-label="Buscar alertas" autocomplete="off">
+            </div>
+            <div class="chip-filter" id="al-filtros">
+              <button type="button" class="chip" data-nivel="todos">Todos</button>
+              <button type="button" class="chip is-off" data-nivel="critical">Crítico</button>
+              <button type="button" class="chip is-off" data-nivel="warning">Instável</button>
+              <button type="button" class="chip is-off" data-nivel="stable">Atualização</button>
             </div>
           </div>
 
@@ -130,7 +150,7 @@
               <b style="font-size:18px">Não perca nada!</b>
             </div>
             <p class="muted" style="font-size:13px;margin:10px 0 14px">Ative as notificações e fique sempre informado sobre seus jogos</p>
-            <button class="btn btn--primary" style="width:100%;justify-content:center">Ativar notificações</button>
+            <button type="button" class="btn btn--primary" id="al-ativar-notificacoes" style="width:100%;justify-content:center">Ativar notificações</button>
           </div>
         </div>
       </div>

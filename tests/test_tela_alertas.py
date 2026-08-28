@@ -7,7 +7,8 @@ RAIZ = Path(__file__).resolve().parents[1]
 
 def test_pagina_tem_as_regioes(cliente):
     corpo = cliente.get("/alertas").get_data(as_text=True)
-    for regiao in ["al-list", "al-summary", "al-favorites"]:
+    for regiao in ["al-list", "al-summary", "al-favorites", "al-busca",
+                   "al-filtros", "al-ativar-notificacoes"]:
         assert f'id="{regiao}"' in corpo
 
 

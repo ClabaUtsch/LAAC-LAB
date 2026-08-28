@@ -15,6 +15,12 @@ def criar_blueprint_telas(servico_telas, servico_auth) -> Blueprint:
         usuario = obter_usuario_atual(servico_auth)
         return jsonify(servico_telas.eu(usuario.id)), 200
 
+    @bp.get("/eu/notificacoes")
+    @jwt_required()
+    def notificacoes():
+        usuario = obter_usuario_atual(servico_auth)
+        return jsonify(servico_telas.notificacoes(usuario.id)), 200
+
     @bp.get("/telas/inicio")
     @jwt_required()
     def inicio():

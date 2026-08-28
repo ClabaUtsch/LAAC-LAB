@@ -141,6 +141,126 @@ function ligarBuscaDoTopo() {
   });
 }
 
+const CHAVE_NOTIFICACOES = "laac.notificacoes.ativas";
+
+function notificacoesLigadas() {
+  return localStorage.getItem(CHAVE_NOTIFICACOES) === "1";
+}
+
+function definirNotificacoesLigadas(ligado) {
+  localStorage.setItem(CHAVE_NOTIFICACOES, ligado ? "1" : "0");
+}
+
+function pintarNotificacoes(lista, dados) {
+  const itens = (dados && dados.itens) || [];
+  if (!itens.length) {
+    lista.replaceChildren(Api.criar("p", { class: "muted" }, "Nenhuma notificação agora."));
+    return;
+  }
+  lista.replaceChildren(
+    ...itens.map((item) =>
+      Api.criar(
+        "a",
+        { class: "notify-item", href: item.href || "#" },
+        Api.criar("div", { class: "notify-item-kicker" }, item.tipo === "conta" ? "Conta" : "Alerta"),
+        Api.criar("div", { class: "notify-item-title" }, item.titulo || ""),
+        Api.criar("div", { class: "notify-item-text" }, item.texto || ""),
+        Api.criar("div", { class: "notify-item-when" }, item.quando || "")
+      )
+    )
+  );
+}
+
+async function carregarNotificacoes() {
+  try {
+    return await Api.pedir("/api/v1/eu/notificacoes");
+  } catch (erro) {
+    if (Api.ehSessaoExpirada(erro)) throw erro;
+    const [eu, tela] = await Promise.all([
+      Api.pedir("/api/v1/eu"),
+      Api.pedir("/api/v1/telas/alertas"),
+    ]);
+    const itens = [
+      {
+        tipo: "conta",
+        titulo: "Conta ativa",
+        texto: "Você está conectado como " + (eu.apelido || eu.nome_usuario) + ".",
+        quando: "agora",
+        href: "/perfil",
+      },
+      {
+        tipo: "conta",
+        titulo: "Nível " + eu.nivel,
+        texto: eu.xp + " XP nesta temporada. Abra o perfil para ver o progresso.",
+        quando: "esta semana",
+        href: "/perfil",
+      },
+    ];
+    for (const alerta of (tela.alertas || []).slice(0, 5)) {
+      itens.push({
+        tipo: "alerta",
+        titulo: alerta.jogo,
+        texto: alerta.texto,
+        quando: alerta.quando || "",
+        href: "/alertas#alerta-" + alerta.id,
+      });
+    }
+    return { itens, nao_lidas: itens.length };
+  }
+}
+
+function ligarSino() {
+  const botao = document.getElementById("casca-sino");
+  const painel = document.getElementById("casca-notificacoes");
+  const lista = document.getElementById("casca-notificacoes-lista");
+  const ponto = document.getElementById("casca-sino-dot");
+  if (!botao || !painel || !lista) return;
+
+  if (ponto) ponto.hidden = false;
+  let ignorarFechar = false;
+
+  const fechar = () => {
+    painel.hidden = true;
+    botao.setAttribute("aria-expanded", "false");
+  };
+
+  botao.addEventListener("click", async (evento) => {
+    evento.preventDefault();
+    evento.stopPropagation();
+    const abrir = painel.hidden;
+    if (!abrir) {
+      fechar();
+      return;
+    }
+    ignorarFechar = true;
+    painel.hidden = false;
+    botao.setAttribute("aria-expanded", "true");
+    lista.replaceChildren(Api.criar("p", { class: "muted" }, "Carregando…"));
+    try {
+      const dados = await carregarNotificacoes();
+      pintarNotificacoes(lista, dados);
+      if (ponto) ponto.hidden = true;
+    } catch (erro) {
+      if (Api.ehSessaoExpirada(erro)) return;
+      lista.replaceChildren(
+        Api.criar("p", { class: "muted" }, "Não foi possível carregar as notificações.")
+      );
+    } finally {
+      setTimeout(() => {
+        ignorarFechar = false;
+      }, 0);
+    }
+  });
+
+  document.addEventListener("click", (evento) => {
+    if (ignorarFechar) return;
+    if (!evento.target.closest(".topbar-notify")) fechar();
+  });
+  document.addEventListener("keydown", (evento) => {
+    if (evento.key === "Escape") fechar();
+  });
+}
+
 Api.aoCarregar(async () => {
   aplicarTema();
   marcarItemAtivo();
@@ -148,5 +268,6 @@ Api.aoCarregar(async () => {
   // /api/v1/eu daria 401, que redirecionaria o login para o login.
   if (document.body.dataset.casca === "auth") return;
   ligarBuscaDoTopo();
+  ligarSino();
   await preencherUsuario();
 });

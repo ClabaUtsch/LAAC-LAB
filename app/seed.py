@@ -27,6 +27,16 @@ SENHA_ADMIN = "moderador123"
 JOGADORES_DEMO = [f"jogador{indice:02d}" for indice in range(1, 13)]
 SENHA_JOGADOR = "jogador123"
 
+#: Ranking “mais jogados no Brasil este mês” (popularidade do catálogo).
+POPULARIDADE_BRASIL = [
+    ("counter-strike", 980),
+    ("fortnite", 940),
+    ("grand-theft", 910),
+    ("valorant", 880),
+    ("call-of-duty", 850),
+    ("apex", 820),
+]
+
 #: (slug parcial, minutos jogados, progresso, favorito)
 BIBLIOTECA_DEMO = [
     ("call-of-duty", 1767, 62, True),
@@ -49,6 +59,14 @@ TOPICOS_DEMO = [
      "Corrigiram o bug de salvar no meio da missão."),
     ("apex", "discussao", "Qual lenda vocês estão jogando?",
      "Voltei depois de uns meses e o meta parece bem diferente."),
+    ("valorant", "noticia", "Novo episódio do Valorant está no ar",
+     "O patch notes chegou com agentes reequilibrados e mapa novo na fila."),
+    ("palworld", "noticia", "Palworld 1.0 amplia o arquipélago",
+     "Mais Pals, raids cooperativas e ajuste de captura no acesso completo."),
+    ("baldurs-gate", "noticia", "Baldur's Gate 3 recebe patch de equilíbrio",
+     "A Larian ajustou classes e corrige travamentos em atos longos."),
+    ("helldivers", "noticia", "Helldivers 2: ordem maior da semana",
+     "A Super Terra pede defesa de planetas da borda exterior neste fim de semana."),
 ]
 
 #: (slug parcial, severidade, texto)
@@ -141,6 +159,15 @@ def semear(silencioso: bool = False) -> dict:
             ).scalars().first()
             if existe is None:
                 db.session.add(JogoGenero(jogo_id=jogo.id, genero_id=genero.id))
+    db.session.commit()
+
+    for parcial, pontos in POPULARIDADE_BRASIL:
+        jogo = next(
+            (j for s, j in por_slug.items() if parcial in (s or "")),
+            None,
+        )
+        if jogo is not None:
+            jogo.popularidade = pontos
     db.session.commit()
 
     def achar(parcial):

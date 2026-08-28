@@ -412,7 +412,27 @@ function montarTela(dados) {
   montarComentarios(dados);
 }
 
+function veioDeAlertas() {
+  if (new URLSearchParams(location.search).get("de") === "alertas") return true;
+  try {
+    const origem = document.referrer ? new URL(document.referrer) : null;
+    return Boolean(origem && origem.origin === location.origin && origem.pathname === "/alertas");
+  } catch (_erro) {
+    return false;
+  }
+}
+
+function aplicarVoltar() {
+  const link = document.getElementById("jg-voltar");
+  if (!link) return;
+  if (veioDeAlertas()) {
+    link.href = "/alertas";
+    link.textContent = "← Alertas";
+  }
+}
+
 async function iniciarJogo() {
+  aplicarVoltar();
   const slug = location.pathname.split("/").pop();
 
   Api.carregando("jg-stats", "Carregando…");
