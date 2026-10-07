@@ -13,15 +13,13 @@ def create_app(config_object=None):
         config_object = get_config()
     app.config.from_object(config_object)
 
-    # Acentuação legível no JSON de resposta.
     app.json.ensure_ascii = False
     app.json.sort_keys = False
 
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
-
-    # Importa os models para que o Migrate os enxergue.
+    
     from app import models  # noqa: F401
 
     from app.errors import registrar_handlers
@@ -47,6 +45,9 @@ def create_app(config_object=None):
     from app.controllers.web_controller import criar_blueprint_web
 
     app.register_blueprint(criar_blueprint_web())
+
+    from app.controllers.usuario_controller import criar_blueprint_usuario
+    app.register_blueprint(criar_blueprint_usuario())
 
     @app.get("/saude")
     def saude():
@@ -82,7 +83,7 @@ def _registrar_handlers_jwt():
         from app.extensions import db
         from app.models import Usuario
 
-        usuario = db.session.get(Usuario, int(identidade))  # guarda: excecao declarada
+        usuario = db.session.get(Usuario, int(identidade)) 
         return {"versao_sessao": usuario.versao_sessao if usuario else 0}
 
     @jwt.token_in_blocklist_loader
@@ -99,18 +100,9 @@ def _registrar_handlers_jwt():
         from app.extensions import db
         from app.models import Usuario
 
-        usuario = db.session.get(Usuario, int(payload["sub"]))  # guarda: excecao declarada
+        usuario = db.session.get(Usuario, int(payload["sub"]))  
         if usuario is None:
-            # Conta apagada: o token não tem mais dono. Sem isto,
-            # /api/auth/renovar segue cunhando access token por até 7
-            # dias para uma conta que não existe.
             return True
-        # O default `0` é carência de migração: tokens emitidos antes
-        # deste recurso não têm a claim e não devem deslogar ninguém.
-        # Depois de 7 dias em produção (validade máxima do refresh)
-        # nenhum token assim existe, e o default vira falha aberta —
-        # trocar por `payload.get("versao_sessao")` sem default, que
-        # recusa o token quando a claim falta por qualquer motivo.
         return payload.get("versao_sessao", 0) != usuario.versao_sessao
 
     @jwt.revoked_token_loader
