@@ -16,3 +16,8 @@ class RepositorioUsuario(RepositorioBase):
             (Usuario.nome_usuario == identificador) | (Usuario.email == identificador)
         )
         return db.session.execute(consulta).scalars().first()
+
+    def listar_ranking_por_xp(self, limite: int = 50):
+        """Busca os usuários ordenados do maior para o menor XP para formar o Leaderboard."""
+        consulta = db.select(Usuario).order_by(Usuario.xp.desc()).limit(limite)
+        return db.session.execute(consulta).scalars().all()
