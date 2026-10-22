@@ -209,6 +209,17 @@ async function carregarNotificacoes() {
   }
 }
 
+async function atualizarPontoDoSino(ponto) {
+  if (!ponto) return;
+  try {
+    const dados = await carregarNotificacoes();
+    ponto.hidden = !((dados && dados.itens) || []).length;
+  } catch (erro) {
+    if (Api.ehSessaoExpirada(erro)) return;
+    ponto.hidden = true;
+  }
+}
+
 function ligarSino() {
   const botao = document.getElementById("casca-sino");
   const painel = document.getElementById("casca-notificacoes");
@@ -216,7 +227,10 @@ function ligarSino() {
   const ponto = document.getElementById("casca-sino-dot");
   if (!botao || !painel || !lista) return;
 
-  if (ponto) ponto.hidden = false;
+  // O ponto só acende quando existe item. Antes ele nascia visível
+  // em toda página, mesmo com a lista vazia.
+  if (ponto) ponto.hidden = true;
+  atualizarPontoDoSino(ponto);
   let ignorarFechar = false;
 
   const fechar = () => {

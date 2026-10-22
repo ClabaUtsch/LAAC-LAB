@@ -12,7 +12,8 @@ def test_pagina_tem_as_regioes_que_o_js_preenche(cliente):
     for regiao in ["home-hero", "hero-text", "hero-dots", "hero-img",
                    "hero-prev", "hero-next", "home-noticias",
                    "news-title", "news-dots", "home-updates",
-                   "home-trending", "home-favorites"]:
+                   "home-trending", "home-favorites", "hero-filtros",
+                   "hero-atualizar", "home-quero", "hero-kicker"]:
         assert f'id="{regiao}"' in corpo
 
 

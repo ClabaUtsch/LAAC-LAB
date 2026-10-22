@@ -132,17 +132,25 @@ def montar() -> dict:
                 },
             ]
         if slug == "valorant":
+            stills = [
+                "e_E9W2vsRbQ",
+                "IhhjcB2ZjIM",
+                "hhlgphVf-1g",
+                "-M_r8MKQ3mo",
+                "ua-iIRQDY8g",
+                "C3QTyMXi-WE",
+            ]
             trailer = {
-                "titulo": "Cinemática Valorant",
+                "titulo": "VALORANT | Official Launch Cinematic Trailer",
                 "embed": "https://www.youtube.com/embed/e_E9W2vsRbQ",
-                "thumb": "https://i.ytimg.com/vi/e_E9W2vsRbQ/hqdefault.jpg",
+                "thumb": "https://i.ytimg.com/vi/e_E9W2vsRbQ/maxresdefault.jpg",
             }
             imagens = [
-                {"src": "https://i.ytimg.com/vi/e_E9W2vsRbQ/hqdefault.jpg", "thumb": "https://i.ytimg.com/vi/e_E9W2vsRbQ/hqdefault.jpg"},
                 {
-                    "src": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Valorant_logo_-_pink_color_version.svg/1280px-Valorant_logo_-_pink_color_version.svg.png",
-                    "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Valorant_logo_-_pink_color_version.svg/320px-Valorant_logo_-_pink_color_version.svg.png",
-                },
+                    "src": f"https://i.ytimg.com/vi/{vid}/maxresdefault.jpg",
+                    "thumb": f"https://i.ytimg.com/vi/{vid}/maxresdefault.jpg",
+                }
+                for vid in stills[1:]
             ]
         pc = (steam or {}).get("pc_requirements") or {}
         saida[slug] = {

@@ -5,6 +5,12 @@ from test_frontend import _sem_comentarios
 RAIZ = Path(__file__).resolve().parents[1]
 
 
+def test_pagina_tem_sessao_de_teste(cliente):
+    corpo = cliente.get("/jogo/qualquer").get_data(as_text=True)
+    assert 'id="jg-sessao"' in corpo
+    assert 'id="jg-sessao-toggle"' in corpo
+
+
 def test_qualquer_slug_serve_a_mesma_pagina(cliente):
     for slug in ["cyberpunk-2077", "um-slug-qualquer"]:
         assert cliente.get(f"/jogo/{slug}").status_code == 200

@@ -60,7 +60,7 @@ CATALOGO = [
 ]
 
 
-def montar_servicos() -> SimpleNamespace:
+def montar_servicos(vitrine_habilitada: bool = False) -> SimpleNamespace:
     repositorio_usuario = RepositorioUsuario()
 
     servicos = SimpleNamespace(
@@ -165,6 +165,12 @@ def montar_servicos() -> SimpleNamespace:
 
     from app.services.tela_service import TelaService
 
+    fonte_vitrine = None
+    if vitrine_habilitada:
+        from app.integracoes.vitrine_externa import obter_vitrine
+
+        fonte_vitrine = obter_vitrine
+
     servicos.telas = TelaService(
         servico_jogos=servicos.jogos,
         servico_alertas=servicos.alertas,
@@ -176,6 +182,7 @@ def montar_servicos() -> SimpleNamespace:
         servico_posts=servicos.posts,
         servico_usuarios=servicos.usuarios,
         servico_generos=servicos.generos,
+        fonte_vitrine=fonte_vitrine,
     )
 
     return servicos

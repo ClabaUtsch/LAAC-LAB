@@ -142,8 +142,19 @@ let indiceMidia = 0;
 let itensMidia = [];
 let playerHls = null;
 
-function mostrarMidia(indice) {
+function mostrarMidia(indice, saltos) {
   if (!itensMidia.length) return;
+  const passos = saltos || 0;
+  if (passos >= itensMidia.length) {
+    if (playerHls) {
+      playerHls.destroy();
+      playerHls = null;
+    }
+    document.getElementById("jg-stage").replaceChildren(
+      Api.criar("div", { class: "store-shot store-shot--empty" }, "Não foi possível carregar a mídia.")
+    );
+    return;
+  }
   indiceMidia = (indice + itensMidia.length) % itensMidia.length;
   const item = itensMidia[indiceMidia];
   const stage = document.getElementById("jg-stage");
@@ -170,7 +181,7 @@ function mostrarMidia(indice) {
         poster: item.thumb || "",
         src: item.src,
         onerror: () => {
-          if (itensMidia.length > 1) mostrarMidia(indiceMidia + 1);
+          if (itensMidia.length > 1) mostrarMidia(indiceMidia + 1, passos + 1);
         },
       });
       stage.replaceChildren(video);
@@ -390,18 +401,18 @@ function montarTela(dados) {
     dados.sobre || "Sem descrição disponível.";
   document.getElementById("jg-merch").textContent = dados.merch;
 
-  const capa = dados.arquivo_capa || dados.imagem_capa || "";
+  const capa = Api.urlDeMidia(dados.arquivo_capa || dados.imagem_capa || "");
   const cover = document.getElementById("jg-cover");
   const fundo = document.getElementById("jg-fundo");
   if (capa) {
     cover.src = capa;
     cover.alt = dados.nome;
     cover.hidden = false;
-    fundo.style.backgroundImage = `url("${capa}")`;
+    Api.pintarImagemDeFundo(fundo, capa);
   } else {
     cover.hidden = true;
-    const [c1, c2] = dados.capa || ["#1b1d2e", "#0a0b12"];
-    fundo.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
+    cover.removeAttribute("src");
+    Api.pintarFundo(fundo, dados.capa, ["#1b1d2e", "#0a0b12"]);
   }
 
   montarGaleria(dados);
@@ -431,9 +442,104 @@ function aplicarVoltar() {
   }
 }
 
+let timerSessao = null;
+
+function chaveSessao(slug) {
+  return "laac.sessao." + slug;
+}
+
+function lerSessao(slug) {
+  try {
+    const bruto = JSON.parse(localStorage.getItem(chaveSessao(slug)) || "{}");
+    return {
+      acumulado: Math.min(Number(bruto.acumulado) || 0, 24 * 3600 * 1000),
+      iniciadoEm: bruto.rodando ? Number(bruto.iniciadoEm) || Date.now() : 0,
+      rodando: Boolean(bruto.rodando),
+      notas: String(bruto.notas || "").slice(0, 500),
+    };
+  } catch (_erro) {
+    return { acumulado: 0, iniciadoEm: 0, rodando: false, notas: "" };
+  }
+}
+
+function gravarSessao(slug, estado) {
+  localStorage.setItem(chaveSessao(slug), JSON.stringify(estado));
+}
+
+function duracaoSessao(estado) {
+  const extra = estado.rodando && estado.iniciadoEm ? Date.now() - estado.iniciadoEm : 0;
+  return Math.max(0, estado.acumulado + extra);
+}
+
+function formatarDuracao(ms) {
+  const total = Math.floor(ms / 1000);
+  const horas = String(Math.floor(total / 3600)).padStart(2, "0");
+  const minutos = String(Math.floor((total % 3600) / 60)).padStart(2, "0");
+  const segundos = String(total % 60).padStart(2, "0");
+  return horas + ":" + minutos + ":" + segundos;
+}
+
+function ligarSessaoDeTeste(slug) {
+  const tempo = document.getElementById("jg-sessao-tempo");
+  const toggle = document.getElementById("jg-sessao-toggle");
+  const zerar = document.getElementById("jg-sessao-zerar");
+  const notas = document.getElementById("jg-sessao-notas");
+  if (!tempo || !toggle || !zerar || !notas || !slug) return;
+
+  let estado = lerSessao(slug);
+  notas.value = estado.notas;
+
+  const pintar = () => {
+    tempo.textContent = formatarDuracao(duracaoSessao(estado));
+    toggle.textContent = estado.rodando ? "Pausar" : "Iniciar";
+  };
+
+  if (timerSessao) clearInterval(timerSessao);
+  timerSessao = setInterval(pintar, 1000);
+  window.addEventListener("pagehide", () => {
+    if (estado.rodando) {
+      estado.acumulado = duracaoSessao(estado);
+      estado.iniciadoEm = Date.now();
+      gravarSessao(slug, estado);
+    }
+    if (timerSessao) clearInterval(timerSessao);
+  }, { once: true });
+
+  toggle.addEventListener("click", () => {
+    if (estado.rodando) {
+      estado.acumulado = duracaoSessao(estado);
+      estado.rodando = false;
+      estado.iniciadoEm = 0;
+    } else {
+      estado.rodando = true;
+      estado.iniciadoEm = Date.now();
+    }
+    gravarSessao(slug, estado);
+    pintar();
+  });
+
+  zerar.addEventListener("click", () => {
+    estado = { acumulado: 0, iniciadoEm: 0, rodando: false, notas: notas.value };
+    gravarSessao(slug, estado);
+    pintar();
+  });
+
+  let gravacao = null;
+  notas.addEventListener("input", () => {
+    clearTimeout(gravacao);
+    gravacao = setTimeout(() => {
+      estado.notas = notas.value.slice(0, 500);
+      gravarSessao(slug, estado);
+    }, 400);
+  });
+
+  pintar();
+}
+
 async function iniciarJogo() {
   aplicarVoltar();
   const slug = location.pathname.split("/").pop();
+  ligarSessaoDeTeste(slug);
 
   Api.carregando("jg-stats", "Carregando…");
   Api.carregando("jg-bugs", "Carregando…");

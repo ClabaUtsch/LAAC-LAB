@@ -12,21 +12,46 @@ const TRENDING_GLYPH =
   '<circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>';
 
 const INTERVALO_CARROSSEL_MS = 6000;
+const INTERVALO_PULSO_MS = 3 * 60 * 1000;
 
 let indiceBanner = 0;
 let timerCarrossel = null;
+let timerNoticias = null;
+let timerPulso = null;
+let timerFrescor = null;
+let slidesAtuais = [];
+let noticiasAtuais = [];
+let slidesExternos = [];
+let filtroAtual = "todos";
+let atualizadoEm = 0;
+let fonteVitrine = "";
 
 function fonteCapa(item) {
   return item.arquivo_capa || item.imagem_capa || "";
 }
 
+function abrirSlide(slide) {
+  if (!slide) return;
+  const externo = Api.linkExternoSeguro(slide.url_externa || "");
+  if (externo) {
+    window.open(externo, "_blank", "noopener,noreferrer");
+    return;
+  }
+  const slug = slide.jogo_slug;
+  if (slug) location.href = "/jogo/" + slug;
+}
+
 function aplicarBanner(banner) {
   const hero = document.getElementById("home-hero");
-  hero.style.background = `linear-gradient(135deg, ${banner.capa[0]}, ${banner.capa[1]})`;
-  document.getElementById("hero-text").textContent = banner.titulo;
+  Api.pintarFundo(hero, banner && banner.capa);
+  document.getElementById("hero-text").textContent = (banner && banner.titulo) || "";
+  const kicker = document.getElementById("hero-kicker");
+  if (kicker) kicker.textContent = (banner && banner.rotulo) || "";
+  const meta = document.getElementById("hero-meta");
+  if (meta) meta.textContent = (banner && (banner.resumo || banner.quando)) || "";
 
   const img = document.getElementById("hero-img");
-  const fonte = fonteCapa(banner);
+  const fonte = Api.urlDeMidia(fonteCapa(banner || {}));
   if (fonte) {
     img.src = fonte;
     img.alt = banner.jogo || "";
@@ -62,7 +87,7 @@ function pararCarrossel() {
 
 function reiniciarTimer(banners) {
   pararCarrossel();
-  if (banners.length < 2) return;
+  if (!banners || banners.length < 2 || document.hidden) return;
   timerCarrossel = setInterval(() => {
     irParaBanner(banners, indiceBanner + 1);
   }, INTERVALO_CARROSSEL_MS);
@@ -109,12 +134,13 @@ function iniciarCarrossel(banners) {
     reiniciarTimer(banners);
   };
 
+  slidesAtuais = banners;
   const hero = document.getElementById("home-hero");
-  hero.style.cursor = banners[0].jogo_slug ? "pointer" : "";
+  const primeiro = banners[0] || {};
+  hero.style.cursor = (primeiro.jogo_slug || primeiro.url_externa) ? "pointer" : "";
   hero.onclick = (evento) => {
     if (evento.target.closest("#hero-dots") || evento.target.closest(".hero-arrow")) return;
-    const slug = banners[indiceBanner].jogo_slug;
-    if (slug) location.href = "/jogo/" + slug;
+    abrirSlide(slidesAtuais[indiceBanner]);
   };
 
   if (varios) {
@@ -130,15 +156,30 @@ function fonteCapaNoticia(item) {
   return item.arquivo_capa || item.imagem_capa || "";
 }
 
+function pararCarrosselNoticias() {
+  if (timerNoticias) {
+    clearInterval(timerNoticias);
+    timerNoticias = null;
+  }
+}
+
+function reiniciarTimerNoticias(noticias) {
+  pararCarrosselNoticias();
+  if (!noticias || noticias.length < 2 || document.hidden) return;
+  timerNoticias = setInterval(() => {
+    irParaNoticia(noticias, indiceNoticia + 1);
+  }, INTERVALO_CARROSSEL_MS);
+}
+
 function aplicarNoticia(item) {
   const bloco = document.getElementById("home-noticias");
-  bloco.style.background = `linear-gradient(135deg, ${item.capa[0]}, ${item.capa[1]})`;
+  Api.pintarFundo(bloco, item && item.capa);
   document.getElementById("news-game").textContent = item.jogo || "Comunidade";
   document.getElementById("news-title").textContent = item.titulo;
   document.getElementById("news-text").textContent = item.resumo || "";
   document.getElementById("news-when").textContent = item.quando || "";
   const img = document.getElementById("news-img");
-  const fonte = fonteCapaNoticia(item);
+  const fonte = Api.urlDeMidia(fonteCapaNoticia(item || {}));
   if (fonte) {
     img.src = fonte;
     img.alt = item.titulo || "";
@@ -186,6 +227,7 @@ function iniciarCarrosselNoticias(noticias) {
     dots.append(ponto);
   });
 
+  noticiasAtuais = noticias;
   indiceNoticia = 0;
   aplicarNoticia(noticias[0]);
 
@@ -210,6 +252,188 @@ function iniciarCarrosselNoticias(noticias) {
     const slug = noticias[indiceNoticia].jogo_slug;
     if (slug) location.href = "/jogo/" + slug;
   };
+  if (varios) {
+    reiniciarTimerNoticias(noticias);
+    bloco.onmouseenter = pararCarrosselNoticias;
+    bloco.onmouseleave = () => reiniciarTimerNoticias(noticias);
+  }
+}
+
+const ROTULOS_FILTRO = [
+  ["todos", "Todos"],
+  ["lancamento", "Lançamentos"],
+  ["embreve", "Em breve"],
+  ["oferta", "Ofertas"],
+  ["noticia", "Notícias"],
+];
+
+function heroVazio(mensagem) {
+  document.getElementById("hero-text").textContent = mensagem;
+  const kicker = document.getElementById("hero-kicker");
+  if (kicker) kicker.textContent = "";
+  const meta = document.getElementById("hero-meta");
+  if (meta) meta.textContent = "";
+  document.getElementById("hero-dots").replaceChildren();
+  document.getElementById("hero-prev").hidden = true;
+  document.getElementById("hero-next").hidden = true;
+  document.getElementById("hero-img").hidden = true;
+  pararCarrossel();
+  slidesAtuais = [];
+}
+
+function marcarChips() {
+  document.querySelectorAll("#hero-filtros .chip").forEach((chip) => {
+    chip.classList.toggle("is-off", chip.dataset.tipo !== filtroAtual);
+  });
+}
+
+function aplicarFiltro(tipo) {
+  filtroAtual = tipo;
+  marcarChips();
+  const visiveis = filtroAtual === "todos"
+    ? slidesExternos
+    : slidesExternos.filter((item) => item.tipo === filtroAtual);
+  if (!visiveis.length) {
+    heroVazio("Nada nesta categoria agora.");
+    return;
+  }
+  iniciarCarrossel(visiveis);
+}
+
+function montarFiltros(itens) {
+  const barra = document.getElementById("hero-filtros");
+  if (!barra) return;
+  const presentes = new Set(itens.map((item) => item.tipo));
+  const opcoes = ROTULOS_FILTRO.filter(([tipo]) => tipo === "todos" || presentes.has(tipo));
+  if (opcoes.length < 2) {
+    barra.hidden = true;
+    barra.replaceChildren();
+    return;
+  }
+  barra.hidden = false;
+  barra.replaceChildren(...opcoes.map(([tipo, rotulo]) => {
+    const chip = Api.criar("button", { type: "button", class: "chip" }, rotulo);
+    chip.dataset.tipo = tipo;
+    chip.addEventListener("click", () => aplicarFiltro(tipo));
+    return chip;
+  }));
+  marcarChips();
+}
+
+function pintarHaQuanto() {
+  const alvo = document.getElementById("hero-fresh");
+  if (!alvo) return;
+  if (!atualizadoEm) {
+    alvo.textContent = "Catálogo local";
+    return;
+  }
+  const minutos = Math.floor((Date.now() - atualizadoEm) / 60000);
+  const ha = minutos < 1 ? "agora" : ("há " + minutos + " min");
+  alvo.textContent = (fonteVitrine || "Vitrine") + " · " + ha;
+}
+
+async function renovarVitrine() {
+  const botao = document.getElementById("hero-atualizar");
+  if (botao) botao.disabled = true;
+  try {
+    const corpo = await Api.pedir("/api/v1/telas/vitrine");
+    const itens = (corpo && corpo.itens) || [];
+    fonteVitrine = (corpo && corpo.fonte) || "";
+    if (itens.length) {
+      slidesExternos = itens;
+      if (filtroAtual !== "todos" && !itens.some((item) => item.tipo === filtroAtual)) {
+        filtroAtual = "todos";
+      }
+      montarFiltros(itens);
+      aplicarFiltro(filtroAtual);
+      atualizadoEm = Date.now();
+    }
+    pintarHaQuanto();
+  } catch (erro) {
+    if (Api.ehSessaoExpirada(erro)) return;
+    console.error(erro);
+    pintarHaQuanto();
+  } finally {
+    if (botao) botao.disabled = false;
+  }
+}
+
+function pararPulso() {
+  if (timerPulso) {
+    clearInterval(timerPulso);
+    timerPulso = null;
+  }
+  if (timerFrescor) {
+    clearInterval(timerFrescor);
+    timerFrescor = null;
+  }
+}
+
+function retomarPulso() {
+  pararPulso();
+  pararCarrossel();
+  pararCarrosselNoticias();
+  if (document.hidden) return;
+  timerPulso = setInterval(() => {
+    renovarVitrine();
+  }, INTERVALO_PULSO_MS);
+  timerFrescor = setInterval(pintarHaQuanto, 30000);
+  if (slidesAtuais.length > 1) reiniciarTimer(slidesAtuais);
+  if (noticiasAtuais.length > 1) reiniciarTimerNoticias(noticiasAtuais);
+}
+
+function ligarPulso() {
+  const botao = document.getElementById("hero-atualizar");
+  if (botao && !botao.dataset.ligado) {
+    botao.dataset.ligado = "1";
+    botao.addEventListener("click", () => {
+      renovarVitrine();
+    });
+    document.addEventListener("visibilitychange", retomarPulso);
+    window.addEventListener("pagehide", () => {
+      pararCarrossel();
+      pararCarrosselNoticias();
+      pararPulso();
+    });
+    document.addEventListener("keydown", (evento) => {
+      if (evento.key !== "ArrowLeft" && evento.key !== "ArrowRight") return;
+      const alvo = evento.target;
+      const tag = alvo && alvo.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || (alvo && alvo.isContentEditable)) return;
+      if (!slidesAtuais || slidesAtuais.length < 2) return;
+      evento.preventDefault();
+      irParaBanner(slidesAtuais, indiceBanner + (evento.key === "ArrowRight" ? 1 : -1));
+      reiniciarTimer(slidesAtuais);
+    });
+  }
+  retomarPulso();
+}
+
+function pintarQuero() {
+  const alvo = document.getElementById("home-quero");
+  if (!alvo) return;
+  const lista = Api.filaTeste.ler();
+  if (!lista.length) {
+    alvo.replaceChildren(
+      Api.criar("p", { class: "muted" }, "Marque jogos em Explorar. A fila fica neste navegador.")
+    );
+    return;
+  }
+  alvo.replaceChildren(...lista.map((item) =>
+    Api.criar(
+      "div",
+      { class: "quero-row" },
+      Api.criar("a", { class: "podium-name", href: "/jogo/" + item.slug }, item.nome || item.slug),
+      Api.criar("button", {
+        type: "button",
+        class: "btn btn--outline quero-sair",
+        onclick: () => {
+          Api.filaTeste.remover(item.slug);
+          pintarQuero();
+        },
+      }, "Tirar")
+    )
+  ));
 }
 
 function capaDaAtualizacao(u) {
@@ -237,11 +461,7 @@ async function initHome() {
     // ramo com banner logo abaixo. Api.vazio() faz replaceChildren()
     // no alvo — chamado em home-hero apagaria esses filhos, a mesma
     // armadilha que quebrava pf-usuario (achado do item 4).
-    document.getElementById("hero-text").textContent = "Nenhum destaque no momento.";
-    document.getElementById("hero-dots").replaceChildren();
-    document.getElementById("hero-prev").hidden = true;
-    document.getElementById("hero-next").hidden = true;
-    document.getElementById("hero-img").hidden = true;
+    heroVazio("Nenhum destaque no momento.");
   } else {
     iniciarCarrossel(data.banners);
   }
@@ -282,6 +502,7 @@ async function initHome() {
   if (data.assuntos.length === 0) {
     Api.vazio("home-trending");
   } else {
+    trending.replaceChildren();
     let lastGroup = null;
     data.assuntos.forEach((t) => {
       if (t.grupo !== lastGroup) {
@@ -300,6 +521,7 @@ async function initHome() {
   if (ranking.length === 0) {
     Api.vazio("home-favorites", "Ainda não há ranking deste mês.");
   } else {
+    favorites.replaceChildren();
     const posto = ["1º lugar", "2º lugar", "3º lugar"];
     ranking.forEach((g, i) => {
       favorites.append(
@@ -312,6 +534,10 @@ async function initHome() {
       );
     });
   }
+
+  pintarQuero();
+  await renovarVitrine();
+  ligarPulso();
 }
 
 Api.aoCarregar(() => {

@@ -166,15 +166,112 @@ const Api = {
   /* Ladrilho de capa: imagem quando houver, senão gradiente + iniciais.
      `capa` é sempre um par de cores hex. Os dois campos de imagem vazios
      é o caso normal, não erro. */
+  /* Só hex entra em `style`. Cor vinda da API interpolada crua
+     quebra o CSS (`#fff;background:url(...)`). */
+  corSegura(valor, reserva) {
+    return /^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(String(valor || ""))
+      ? String(valor)
+      : reserva;
+  },
+
+  coresDoCartao(capa, reserva) {
+    const base = Array.isArray(reserva) && reserva.length >= 2
+      ? reserva
+      : ["#2b2d47", "#14152b"];
+    const lista = Array.isArray(capa) ? capa : [];
+    return [Api.corSegura(lista[0], base[0]), Api.corSegura(lista[1], base[1])];
+  },
+
+  pintarFundo(elemento, capa, reserva) {
+    if (!elemento) return;
+    const par = Api.coresDoCartao(capa, reserva);
+    elemento.style.background = "linear-gradient(135deg, " + par[0] + ", " + par[1] + ")";
+  },
+
+  /* Caminho local (`/media/...`) ou https. Rejeita javascript:, data:
+     e aspas que escapariam de url("..."). */
+  urlDeMidia(bruto) {
+    if (typeof bruto !== "string") return "";
+    const texto = bruto.trim();
+    if (!texto || texto.length > 2000 || /[\s"'<>\\]/.test(texto)) return "";
+    if (/^(javascript|data|vbscript):/i.test(texto)) return "";
+    if (texto.startsWith("/") && !texto.startsWith("//") && !texto.startsWith("/\\")) return texto;
+    try {
+      const url = new URL(texto);
+      return url.protocol === "https:" ? url.href : "";
+    } catch (_erro) {
+      return "";
+    }
+  },
+
+  pintarImagemDeFundo(elemento, bruto) {
+    const segura = Api.urlDeMidia(bruto);
+    if (!elemento) return segura;
+    elemento.style.backgroundImage = segura ? "url(" + JSON.stringify(segura) + ")" : "none";
+    return segura;
+  },
+
+  /* Link de saída da vitrine: só https nos hosts da loja/RAWG. */
+  linkExternoSeguro(bruto) {
+    try {
+      const url = new URL(bruto);
+      if (url.protocol !== "https:" || url.username || url.password) return "";
+      const host = url.hostname.toLowerCase();
+      const ok = host === "store.steampowered.com"
+        || host === "steamcommunity.com"
+        || host === "rawg.io"
+        || host === "www.rawg.io";
+      return ok ? url.href : "";
+    } catch (_erro) {
+      return "";
+    }
+  },
+
+  /* Fila "Quero testar": só neste navegador, teto de 12 jogos. */
+  filaTeste: {
+    chave: "laac.queroTestar",
+    ler() {
+      try {
+        const lista = JSON.parse(localStorage.getItem(Api.filaTeste.chave) || "[]");
+        if (!Array.isArray(lista)) return [];
+        return lista.filter((item) => item && typeof item.slug === "string" && item.slug);
+      } catch (_erro) {
+        return [];
+      }
+    },
+    gravar(lista) {
+      localStorage.setItem(Api.filaTeste.chave, JSON.stringify(lista.slice(0, 12)));
+    },
+    tem(slug) {
+      return Api.filaTeste.ler().some((item) => item.slug === slug);
+    },
+    alternar(jogo) {
+      const lista = Api.filaTeste.ler();
+      const existe = lista.some((item) => item.slug === jogo.slug);
+      const proxima = existe
+        ? lista.filter((item) => item.slug !== jogo.slug)
+        : [{
+            slug: jogo.slug,
+            nome: String(jogo.nome || "").slice(0, 80),
+            pontuacao: Number(jogo.pontuacao) || 0,
+          }, ...lista];
+      Api.filaTeste.gravar(proxima);
+      return !existe;
+    },
+    remover(slug) {
+      Api.filaTeste.gravar(Api.filaTeste.ler().filter((item) => item.slug !== slug));
+    },
+  },
+
   capa(jogo, classe = "") {
-    const cores = jogo.capa && jogo.capa.length >= 2 ? jogo.capa : ["#2b2d47", "#12131f"];
-    const fundo = `background: linear-gradient(135deg, ${cores[0]}, ${cores[1]});`;
+    const cores = Api.coresDoCartao(jogo.capa, ["#2b2d47", "#12131f"]);
+    const fundo = "background: linear-gradient(135deg, " + cores[0] + ", " + cores[1] + ");";
     const ladrilho = Api.criar(
       "div",
       { class: "cover " + classe, style: fundo },
       jogo.iniciais || Api.iniciaisDe(jogo.nome)
     );
-    const fonte = jogo.arquivo_capa || jogo.imagem_capa || "";
+    const fonte = Api.urlDeMidia(jogo.arquivo_capa || jogo.imagem_capa || "");
     if (fonte) {
       const img = Api.criar("img", {
         src: fonte,

@@ -19,14 +19,16 @@ function selecionarPraca(slug) {
   location.search = slug ? "?jogo=" + encodeURIComponent(slug) : "";
 }
 
-/* Cartão de praça: {id, slug, nome, iniciais, capa, total_topicos}. É uma
-   forma DIFERENTE do cartão de jogo — não tem `pontuacao` nem `status` —
-   então NUNCA passa pelo renderizador canônico de cartão de jogo do
-   núcleo (aquele lê `status.rotulo` e quebraria a lista inteira).
-   Api.capa() é segura aqui: só lê capa/iniciais/nome, que a praça tem. */
+/* Cartão de praça: {id, slug, nome, iniciais, capa, imagem_capa,
+   arquivo_capa, total_topicos}. É uma forma DIFERENTE do cartão de
+   jogo — não tem `pontuacao` nem `status` — então NUNCA passa pelo
+   renderizador canônico de cartão de jogo do núcleo (aquele lê
+   `status.rotulo` e quebraria a lista inteira). Api.capa() pinta a
+   foto do catálogo quando ela vem no payload e cai no gradiente
+   quando não vem. A altura fica no CSS (aspect-ratio), para a faixa
+   rolar com snap sem achatar a arte. */
 function cartaoDePraca(praca, ativa) {
   const capa = Api.capa(praca);
-  capa.style.height = "64px";
   return Api.criar(
     "div",
     {
