@@ -14,6 +14,10 @@ HOSTS_PERMITIDOS = (
     "video.akamai.steamstatic.com",
     "i.ytimg.com",
     "upload.wikimedia.org",
+    # background_image da RAWG (host exato; nada de subdomínios).
+    "media.rawg.io",
+    # mp4 dos trailers que a RAWG devolve (host exato).
+    "steamcdn-a.akamaihd.net",
 )
 
 UA = "Mozilla/5.0 (compatible; LaaCLab/1.0)"
@@ -43,10 +47,9 @@ def criar_blueprint_midia() -> Blueprint:
         alvo = urlparse(bruto)
         if alvo.scheme != "https" or not _host_permitido(alvo.hostname):
             abort(400)
-        cabecalhos = {
-            "User-Agent": UA,
-            "Referer": "https://store.steampowered.com/",
-        }
+        cabecalhos = {"User-Agent": UA}
+        if alvo.hostname.lower() != "media.rawg.io":
+            cabecalhos["Referer"] = "https://store.steampowered.com/"
         faixa = request.headers.get("Range")
         if faixa:
             cabecalhos["Range"] = faixa

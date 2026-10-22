@@ -36,6 +36,10 @@ class Jogo(db.Model):
     data_lancamento = db.Column(db.String(60))
     metacritic = db.Column(db.SmallInteger)
 
+    #: Id do registro correspondente na RAWG. Único: dois jogos locais
+    #: nunca apontam para o mesmo registro. Nulo = ainda não associado.
+    rawg_id = db.Column(db.Integer, unique=True, index=True)
+
     capa_url = db.Column(db.Text)
     arquivo_capa = db.Column(db.String(255))
     # Duas cores hex. Nunca lista vazia — o Service aplica o fallback.

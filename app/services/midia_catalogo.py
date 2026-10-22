@@ -26,6 +26,26 @@ def _catalogo() -> dict:
     return _cache
 
 
+_ARQUIVO_RAWG = Path(__file__).resolve().parents[2] / "dados" / "midia_rawg.json"
+_cache_rawg = None
+_mtime_rawg = None
+
+
+def _catalogo_rawg() -> dict:
+    """Mídia vinda da RAWG (`flask buscar-midia-rawg`). Complementa, nunca
+    substitui, o catálogo principal."""
+    global _cache_rawg, _mtime_rawg
+    stamp = _ARQUIVO_RAWG.stat().st_mtime if _ARQUIVO_RAWG.exists() else None
+    if _cache_rawg is None or stamp != _mtime_rawg:
+        try:
+            dados = json.loads(_ARQUIVO_RAWG.read_text(encoding="utf-8")) if stamp else {}
+        except (OSError, ValueError):
+            dados = {}
+        _cache_rawg = dados if isinstance(dados, dict) else {}
+        _mtime_rawg = stamp
+    return _cache_rawg
+
+
 def para_origem(url: str | None) -> str:
     """CDN da Steam/YouTube img via `/media/origem` — mesma origem do site."""
     texto = (url or "").strip()
@@ -56,7 +76,8 @@ def extras_do_slug(slug: str) -> dict:
                 bruto = valor
                 break
     requisitos = bruto.get("requisitos") or {}
-    trailer = bruto.get("trailer") or None
+    rawg = _catalogo_rawg().get(slug or "") or {}
+    trailer = bruto.get("trailer") or rawg.get("trailer") or None
     if trailer:
         trailer = dict(trailer)
         if trailer.get("mp4"):
@@ -66,7 +87,7 @@ def extras_do_slug(slug: str) -> dict:
         if trailer.get("thumb"):
             trailer["thumb"] = para_origem(trailer["thumb"])
     imagens = []
-    for foto in bruto.get("imagens") or []:
+    for foto in (bruto.get("imagens") or rawg.get("imagens") or []):
         src = para_origem(foto.get("src"))
         thumb = para_origem(foto.get("thumb") or foto.get("src"))
         if src:
