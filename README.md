@@ -101,3 +101,30 @@ rodar `python app.py`.
 Fluxo básico: crie uma conta em `/registro`, faça login em `/login` e use o
 menu no topo para acessar **Jogos** (catálogo, com cadastro/edição/exclusão)
 e **Usuários**/**Meu perfil**.
+
+## Imagens dos jogos pela RAWG
+
+A imagem principal (`background_image`) é gravada no campo que já existia, `jogos.capa_url`, e exibida nos mesmos espaços de sempre. A página nunca consulta a RAWG: usa a URL persistida.
+
+```
+cp .env.example .env          # preencha RAWG_API_KEY
+flask db upgrade              # cria jogos.rawg_id (não altera dados existentes)
+flask buscar-imagens-rawg --dry-run     # mostra o que seria feito
+flask buscar-imagens-rawg               # preenche só jogos SEM imagem
+flask buscar-imagens-rawg --substituir  # também troca capa_url já preenchida
+flask vincular-rawg <slug> <rawg_id>    # resolve casos ambíguos manualmente
+flask importar-rawg --quantidade 20     # novos jogos já entram com rawg_id e imagem
+```
+
+`arquivo_capa` (imagem local) nunca é alterado. Jogos sem correspondência segura na RAWG são listados, e ficam como estavam.
+
+## Imagens extras, trailers e vídeos (RAWG)
+
+```
+flask importar-rawg --quantidade 200     # expande o catálogo (já com rawg_id e capa)
+flask buscar-imagens-rawg                # vincula/capa dos jogos antigos
+flask buscar-midia-rawg --dry-run        # capturas e trailers (só jogos com rawg_id)
+flask buscar-midia-rawg
+```
+
+A mídia vai para `dados/midia_rawg.json` e entra na galeria existente da tela de detalhe apenas onde `dados/midia_jogos.json` não tem mídia. A cota gratuita da RAWG é limitada: cada jogo importado gasta 1 consulta de detalhe e cada mídia 2.
