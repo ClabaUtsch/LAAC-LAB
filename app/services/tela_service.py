@@ -25,6 +25,7 @@ class TelaService:
         servico_posts=None,
         servico_usuarios=None,
         servico_generos=None,
+        fonte_vitrine=None,
     ):
         self.jogos = servico_jogos
         self.alertas_servico = servico_alertas
@@ -36,6 +37,9 @@ class TelaService:
         self.posts = servico_posts
         self.usuarios = servico_usuarios
         self.generos = servico_generos
+        # Callable injetado pela composição. None nos testes: a home
+        # não abre socket para a Steam/RAWG.
+        self.fonte_vitrine = fonte_vitrine
 
     # ------------------------------------------------------------------
     def eu(self, usuario_id: int) -> dict:
@@ -182,15 +186,34 @@ class TelaService:
         ]
 
     def _cartoes_mais_jogados(self, limite: int = 6) -> list[dict]:
-        """Ranking do mês no Brasil: `popularidade` do catálogo (seed)."""
-        jogos = self.jogos.listar_todos(
-            usuario=None, ordenar_por="-popularidade"
+        """Ranking do mês no Brasil: `popularidade` do catálogo (seed).
+
+        Uma página já ordenada basta. `listar_todos` percorria o
+        catálogo inteiro só para devolver três cartões.
+        """
+        jogos = self.jogos.listar_entidades(
+            por_pagina=limite, ordenar_por="-popularidade", usuario=None
         )
         return [
             self.jogos.montar_card(jogo, favorito=False, na_biblioteca=False)
-            for jogo in jogos[:limite]
+            for jogo in jogos
             if (jogo.popularidade or 0) > 0
         ]
+
+    def vitrine(self) -> dict:
+        """Destaques externos. Vazio quando a fonte está desligada ou cai."""
+        if self.fonte_vitrine is None:
+            return {"itens": [], "fonte": ""}
+        try:
+            corpo = self.fonte_vitrine() or {}
+        except Exception:
+            return {"itens": [], "fonte": ""}
+        if not isinstance(corpo, dict):
+            return {"itens": [], "fonte": ""}
+        itens = corpo.get("itens") or []
+        if not isinstance(itens, list):
+            itens = []
+        return {"itens": itens[:8], "fonte": str(corpo.get("fonte") or "")}
 
     def notificacoes(self, usuario_id: int) -> dict:
         usuario = self.auth.obter_entidade(usuario_id)
@@ -548,7 +571,7 @@ class TelaService:
             # Mesma regra de `jogo_service.montar_card`: reaproveita
             # `gerar_iniciais`, não uma segunda decisão (defeito 7).
             "iniciais": jogo.iniciais or gerar_iniciais(jogo.nome),
-            "capa": self._capa(jogo),
+            **self._capa_completa(jogo),
             "total_topicos": total,
         }
 

@@ -319,13 +319,13 @@ function montarTelaDetalhes(dados) {
   document.getElementById("jg-sobre").textContent = dados.sobre || "Sem descrição disponível.";
   document.getElementById("jg-merch").textContent = dados.merch || "Sem merch disponível.";
 
-  const capa = dados.arquivo_capa || dados.imagem_capa || "";
+  const capa = Api.urlDeMidia(dados.arquivo_capa || dados.imagem_capa || "");
   const cover = document.getElementById("jg-cover");
   const fundo = document.getElementById("jg-fundo");
   if (capa) {
-    cover.src = capa; cover.alt = dados.nome; cover.hidden = false; fundo.style.backgroundImage = `url("${capa}")`;
+    cover.src = capa; cover.alt = dados.nome; cover.hidden = false; Api.pintarImagemDeFundo(fundo, capa);
   } else {
-    cover.hidden = true; const [c1, c2] = dados.capa || ["#1b1d2e", "#0a0b12"]; fundo.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
+    cover.hidden = true; Api.pintarFundo(fundo, dados.capa, ["#1b1d2e", "#0a0b12"]);
   }
 
   montarGaleria(dados);

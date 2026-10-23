@@ -23,7 +23,7 @@ def _codigo():
 
 def test_pagina_tem_as_regioes(cliente):
     corpo = cliente.get("/explorar").get_data(as_text=True)
-    for regiao in ["ex-busca", "ex-genero", "ex-ordem", "ex-grade", "ex-mais", "ex-vitrine"]:
+    for regiao in ["ex-busca", "ex-genero", "ex-ordem", "ex-grade", "ex-mais", "ex-vitrine", "ex-comparar"]:
         assert f'id="{regiao}"' in corpo
 
 

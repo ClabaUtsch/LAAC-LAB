@@ -27,12 +27,19 @@ def create_app(config_object=None):
     registrar_handlers(app)
     _registrar_handlers_jwt()
 
+    import os
+
     from app.composicao import montar_servicos
     from app.controllers.auth_controller import criar_blueprint_auth
     from app.controllers.paginas_controller import criar_blueprint_midia
     from app.controllers.registro import registrar_controllers
 
-    servicos = montar_servicos()
+    # Fora de teste, GET /telas/vitrine fala com a Steam (ou com a
+    # RAWG, se houver chave). TestingConfig deixa a fonte desligada:
+    # a suíte não abre socket.
+    servicos = montar_servicos(
+        vitrine_habilitada=not app.testing and os.getenv("VITRINE_EXTERNA", "1") != "0"
+    )
     app.extensions["servicos_laaclab"] = servicos
     app.register_blueprint(criar_blueprint_auth(servicos.auth))
     app.register_blueprint(criar_blueprint_midia())

@@ -1519,10 +1519,6 @@
     },
     "imagens": [
       {
-        "src": "/estatico/vitrine/valorant/01.jpg",
-        "thumb": "/estatico/vitrine/valorant/01.jpg"
-      },
-      {
         "src": "/estatico/vitrine/valorant/02.jpg",
         "thumb": "/estatico/vitrine/valorant/02.jpg"
       },

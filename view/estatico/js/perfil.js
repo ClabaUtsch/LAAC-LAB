@@ -55,7 +55,7 @@ async function iniciarPerfil() {
               "div",
               {
                 class: "cover",
-                style: `background: linear-gradient(135deg, ${g.capa[0]}, ${g.capa[1]});width:64px;height:40px;font-size:9px`,
+                style: "background: linear-gradient(135deg, " + Api.coresDoCartao(g.capa)[0] + ", " + Api.coresDoCartao(g.capa)[1] + ");width:64px;height:40px;font-size:9px",
               },
               Api.iniciaisDe(g.jogo)
             ),

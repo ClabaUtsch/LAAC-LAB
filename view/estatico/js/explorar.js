@@ -11,6 +11,7 @@
 const ATRASO_BUSCA_MS = 400;
 
 let proximoCaminho = null;
+const comparados = [];
 let generosPreenchidos = false;
 let temporizadorBusca = null;
 
@@ -62,9 +63,44 @@ function montarCartao(jogo) {
     jogo.na_biblioteca ? "Na biblioteca ✓" : "Adicionar"
   );
   if (jogo.na_biblioteca) botao.disabled = true;
+
+  const quero = Api.criar(
+    "button",
+    {
+      type: "button",
+      class: "btn btn--outline",
+      style: "margin-top:8px;width:100%;justify-content:center",
+      onclick: (evento) => {
+        evento.preventDefault();
+        evento.stopPropagation();
+        const ligado = Api.filaTeste.alternar(jogo);
+        quero.textContent = ligado ? "Na fila de teste ✓" : "Quero testar";
+      },
+    },
+    Api.filaTeste.tem(jogo.slug) ? "Na fila de teste ✓" : "Quero testar"
+  );
+
+  const noComparar = comparados.some((item) => item.slug === jogo.slug);
+  const comparar = Api.criar(
+    "button",
+    {
+      type: "button",
+      class: "btn btn--outline",
+      style: "margin-top:8px;width:100%;justify-content:center",
+      onclick: (evento) => {
+        evento.preventDefault();
+        evento.stopPropagation();
+        alternarComparacao(jogo);
+      },
+    },
+    noComparar ? "Na comparação ✓" : "Comparar saúde"
+  );
+
   const pecas = [
     Api.criar("span", { class: "store-chip" }, "Abrir vitrine"),
     botao,
+    quero,
+    comparar,
   ];
   const cartao = Api.cartaoDeJogo(jogo, Api.criar("div", {}, ...pecas));
   cartao.classList.add("game-card--vitrine");
@@ -74,6 +110,67 @@ function montarCartao(jogo) {
     capa.append(Api.criar("span", { class: "store-thumb-play" }, "▶ Trailer"));
   }
   return cartao;
+}
+
+function alternarComparacao(jogo) {
+  const indice = comparados.findIndex((item) => item.slug === jogo.slug);
+  if (indice >= 0) comparados.splice(indice, 1);
+  else {
+    if (comparados.length >= 2) comparados.shift();
+    comparados.push({
+      slug: jogo.slug,
+      nome: jogo.nome,
+      pontuacao: jogo.pontuacao,
+      rotulo: (jogo.status && jogo.status.rotulo) || "",
+    });
+  }
+  pintarComparacao();
+  document.querySelectorAll("#ex-grade .game-card").forEach((cartao) => {
+    const href = cartao.getAttribute("href") || "";
+    const slug = href.split("/").pop();
+    const botao = [...cartao.querySelectorAll("button")].find((el) =>
+      el.textContent.indexOf("ompara") >= 0 || el.textContent.indexOf("comparação") >= 0
+    );
+    if (!botao) return;
+    const ligado = comparados.some((item) => item.slug === slug);
+    botao.textContent = ligado ? "Na comparação ✓" : "Comparar saúde";
+  });
+}
+
+function pintarComparacao() {
+  const barra = document.getElementById("ex-comparar");
+  if (!barra) return;
+  if (comparados.length === 0) {
+    barra.hidden = true;
+    barra.replaceChildren();
+    return;
+  }
+  barra.hidden = false;
+  if (comparados.length === 1) {
+    barra.replaceChildren(
+      Api.criar("p", { class: "muted" }, "Escolha mais um jogo para comparar a saúde.")
+    );
+    return;
+  }
+  const [a, b] = comparados;
+  const pa = Number(a.pontuacao) || 0;
+  const pb = Number(b.pontuacao) || 0;
+  let leitura = "Empate de instabilidade no bugômetro.";
+  if (pa !== pb) {
+    leitura = (pa > pb ? a.nome : b.nome) + " está mais instável.";
+  }
+  const coluna = (jogo) =>
+    Api.criar(
+      "a",
+      { class: "compare-col", href: "/jogo/" + jogo.slug },
+      Api.criar("div", { class: "compare-nome" }, jogo.nome),
+      Api.criar("div", { class: "compare-nota" }, String(jogo.pontuacao ?? "—")),
+      Api.criar("div", { class: "muted" }, jogo.rotulo || "Bugômetro")
+    );
+  barra.replaceChildren(
+    Api.criar("div", { class: "compare-grid" }, coluna(a), coluna(b)),
+    Api.criar("p", { class: "compare-leitura" }, leitura)
+  );
 }
 
 function montarVitrine(jogos) {

@@ -123,10 +123,22 @@
         <!-- Coluna principal: carrossel dos jogos em destaque + atualizações -->
         <div class="stack">
 
-          <!-- Carrossel: um slide por jogo de `banners` (destaques do catálogo) -->
+          <div class="hero-tools">
+            <div class="chip-filter" id="hero-filtros" role="tablist" aria-label="Filtrar destaques" hidden></div>
+            <div class="hero-tools-side">
+              <span id="hero-fresh" class="hero-fresh">Catálogo local</span>
+              <button type="button" class="btn btn--outline hero-atualizar" id="hero-atualizar">Atualizar</button>
+            </div>
+          </div>
+
+          <!-- Carrossel: catálogo local até a vitrine externa responder -->
           <div class="hero" id="home-hero">
             <img class="hero-img" id="hero-img" alt="" hidden>
-            <div class="hero-text" id="hero-text">—</div>
+            <div class="hero-copy">
+              <div class="hero-kicker" id="hero-kicker"></div>
+              <div class="hero-text" id="hero-text">—</div>
+              <div class="hero-meta" id="hero-meta"></div>
+            </div>
             <button type="button" class="hero-arrow hero-arrow--prev" id="hero-prev" aria-label="Jogo anterior">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6 9 12l6 6"/></svg>
             </button>
@@ -168,6 +180,12 @@
           <div class="card">
             <div class="section-title" style="font-size:18px;text-align:center;margin-bottom:6px">Trending Toppics</div>
             <div id="home-trending"></div>
+          </div>
+
+          <div class="card">
+            <div class="section-title">Quero testar</div>
+            <p class="podium-kicker">Fila local de QA</p>
+            <div id="home-quero"></div>
           </div>
 
           <div class="card">

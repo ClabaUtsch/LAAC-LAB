@@ -361,5 +361,8 @@ def test_cartao_de_praca_carrega_id(cliente, praca):
         "/api/v1/telas/comunidade", headers=praca["cabecalho"]
     ).get_json()
     assert isinstance(corpo["selecionado"]["id"], int)
+    assert "imagem_capa" in corpo["selecionado"]
     for cartao in corpo["jogos"]:
         assert isinstance(cartao["id"], int)
+        assert "imagem_capa" in cartao
+        assert "arquivo_capa" in cartao

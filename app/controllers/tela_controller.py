@@ -27,6 +27,12 @@ def criar_blueprint_telas(servico_telas, servico_auth) -> Blueprint:
         usuario = obter_usuario_atual(servico_auth)
         return jsonify(servico_telas.inicio(usuario.id)), 200
 
+    @bp.get("/telas/vitrine")
+    @jwt_required()
+    def vitrine():
+        obter_usuario_atual(servico_auth)
+        return jsonify(servico_telas.vitrine()), 200
+
     @bp.get("/telas/bugometro")
     @jwt_required()
     def bugometro():
