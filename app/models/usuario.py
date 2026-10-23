@@ -20,6 +20,7 @@ class Usuario(db.Model):
     senha_hash = db.Column(db.String(255), nullable=False)
 
     apelido = db.Column(db.String(50), default="")
+    data_nascimento = db.Column(db.Date, nullable=False) 
     idade = db.Column(db.Integer)
     avatar_url = db.Column(db.Text)
     bio = db.Column(db.String(280), default="")
@@ -31,22 +32,10 @@ class Usuario(db.Model):
     conquistas = db.Column(db.Integer, default=0, nullable=False)
     amigos = db.Column(db.Integer, default=0, nullable=False)
     dias_ativo = db.Column(db.Integer, default=0, nullable=False)
-
-    # Substitui o framework de permissões do Django (spec 4.8).
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
 
     criado_em = db.Column(db.DateTime, default=agora)
-
-    #: Instante da última troca de senha, truncado ao segundo. Não é mais
-    #: o critério de revogação (ver `versao_sessao`); é só o registro de
-    #: QUANDO a senha mudou, para a tela de Configuração exibir.
     senha_alterada_em = db.Column(db.DateTime, nullable=True)
-
-    #: Incrementa a cada troca de senha. É ESTE campo que decide se um
-    #: token vale, não `senha_alterada_em`: o `iat` do JWT é inteiro em
-    #: segundos, então o token emitido pela própria troca cai no MESMO
-    #: segundo da marca — comparar relógio ou deixa o token velho vivo
-    #: (`<`) ou mata o novo (`<=`), e nenhum ajuste constante resolve.
     versao_sessao = db.Column(db.Integer, nullable=False, default=0, server_default="0")
 
     biblioteca = db.relationship(

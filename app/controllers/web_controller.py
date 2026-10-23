@@ -25,6 +25,7 @@ PAGINAS_POR_ROTA = {
     "/registro": "registro.html",
     "/explorar": "explorar.html",
     "/configuracao": "configuracao.html",
+    "/ranking": "ranking.html",
 }
 
 

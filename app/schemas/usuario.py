@@ -21,6 +21,11 @@ class UsuarioEntradaSchema(SchemaEntradaBase):
 class RegistroSchema(Schema):
     nome_usuario = fields.Str(required=True, validate=validate.Length(min=3, max=50))
     email = fields.Email(required=True, validate=validate.Length(max=100))
+    data_nascimento = fields.Date(
+        required=True, 
+        error_messages={"required": "A data de nascimento é obrigatória."}
+    )
+    
     senha = fields.Str(required=True, validate=validate.Length(min=8, max=128))
     apelido = fields.Str(load_default="", validate=validate.Length(max=50))
     idade = fields.Int(load_default=None, allow_none=True)
