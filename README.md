@@ -267,10 +267,10 @@ def buscar_por_titulo(self, termo):
 | Área | Tecnologias |
 |---|---|
 | Linguagem | Python 3.12 |
-| API | Flask, SQLAlchemy, JWT (SimpleJWT/JWT), Swagger (drf-spectacular) `[confirmar]` |
+| API | Flask, SQLAlchemy, JWT (SimpleJWT/JWT), Swagger (drf-spectacular) |
 | Frontend | Flask (templates), HTML, CSS |
-| Banco de dados | SQLite (desenvolvimento) · PostgreSQL / MySQL `[confirmar]` |
-| Infra | Docker, Docker Compose, Redis, Celery, Gunicorn `[usar apenas o que estiver ativo]` |
+| Banco de dados | SQLite (desenvolvimento) · PostgreSQL / MySQL  |
+| Infra | Docker, Docker Compose `[usar apenas o que estiver ativo]` |
 | Ferramentas | Postman, Cursor, Visual Studio Code, DBeaver |
 
 > ⚠️ Remova desta tabela o que não é usado pela versão atual, para não gerar dúvida na banca.
