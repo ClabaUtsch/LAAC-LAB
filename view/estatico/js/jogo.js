@@ -399,7 +399,105 @@ function montarTela(dados) {
   );
   document.getElementById("jg-sobre").textContent =
     dados.sobre || "Sem descrição disponível.";
-  document.getElementById("jg-merch").textContent = dados.merch;
+
+  const merch = dados.merch || {};
+  document.getElementById("jg-merch").textContent =
+    typeof merch === "string" ? merch : merch.texto || "Sem informações de merch para este jogo.";
+  const merchLinks = document.getElementById("jg-merch-links");
+  if (merchLinks) {
+    merchLinks.replaceChildren();
+    (merch.itens || []).forEach((item) => {
+      if (!item.url) return;
+      merchLinks.append(
+        Api.criar(
+          "a",
+          {
+            href: item.url,
+            target: "_blank",
+            rel: "noopener noreferrer",
+            class: "btn btn--outline",
+            style: "display:inline-flex;margin:6px 8px 0 0",
+          },
+          item.titulo || "Abrir link"
+        )
+      );
+    });
+  }
+
+  const compra = document.getElementById("jg-compra");
+  if (compra) {
+    compra.replaceChildren();
+    (dados.links_compra || []).forEach((link) => {
+      compra.append(
+        Api.criar(
+          "div",
+          { style: "padding:10px 0;border-bottom:1px solid var(--border)" },
+          Api.criar("div", { style: "font-weight:700" }, link.loja || "Loja"),
+          Api.criar("div", { class: "muted", style: "margin:6px 0" }, link.como || ""),
+          Api.criar(
+            "a",
+            {
+              href: link.url,
+              target: "_blank",
+              rel: "noopener noreferrer",
+              class: "btn btn--primary",
+              style: "display:inline-flex;margin-top:6px",
+            },
+            "Ir para compra"
+          )
+        )
+      );
+    });
+    if (!(dados.links_compra || []).length) {
+      compra.append(Api.criar("div", { class: "muted" }, "Sem links de compra cadastrados."));
+    }
+  }
+
+  const similares = document.getElementById("jg-similares");
+  if (similares) {
+    similares.replaceChildren();
+    (dados.similares || []).forEach((jogo) => {
+      similares.append(
+        Api.criar(
+          "a",
+          { class: "game-tile", href: "/jogo/" + jogo.slug, style: "text-decoration:none;color:inherit" },
+          Api.capa(jogo),
+          Api.criar("div", { class: "t-name" }, jogo.nome)
+        )
+      );
+    });
+    if (!(dados.similares || []).length) {
+      similares.append(Api.criar("div", { class: "muted" }, "Sem jogos similares no momento."));
+    }
+  }
+
+  const comu = dados.comunidade || {};
+  const textoComu = document.getElementById("jg-comunidade-texto");
+  const linkComu = document.getElementById("jg-comunidade-link");
+  const btnEntrar = document.getElementById("jg-comunidade-entrar");
+  if (textoComu) {
+    textoComu.textContent =
+      (comu.total_topicos || 0) +
+      " tópicos · " +
+      (comu.membros || 0) +
+      " membros" +
+      (comu.membro ? " · você já participa" : "");
+  }
+  if (linkComu) linkComu.href = comu.href || "/comunidade";
+  if (btnEntrar) {
+    btnEntrar.style.display = comu.membro ? "none" : "";
+    btnEntrar.onclick = async () => {
+      try {
+        await Api.pedir(`/api/v1/comunidade/pracas/${dados.id}/entrar`, {
+          metodo: "POST",
+          corpo: {},
+        });
+        location.href = comu.href || "/comunidade?jogo=" + dados.slug;
+      } catch (e) {
+        if (!Api.ehSessaoExpirada(e)) alert(e.message || "Não foi possível entrar.");
+      }
+    };
+  }
 
   const capa = Api.urlDeMidia(dados.arquivo_capa || dados.imagem_capa || "");
   const cover = document.getElementById("jg-cover");

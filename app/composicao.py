@@ -17,14 +17,12 @@ from app.schemas import social as ss
 from app.schemas.usuario import UsuarioEntradaSchema, UsuarioSchema
 from app.services.auth_service import AuthService
 from app.services.base import ServicoBase
+from app.services.comunidade_service import ComunidadeService
+from app.services.progressao_service import ProgressaoService
+from app.services.social_service import SocialService
 
 #: (atributo, model, schema_saida, schema_entrada, nome_recurso, ordenacao)
 CATALOGO = [
-    # A allowlist real mora em ORDENACAO_JOGOS (jogo_repository.py); esta
-    # entrada só existe para a lista genérica ter as 6 colunas de todo
-    # recurso, já que `servicos.jogos` é substituído logo abaixo pelo
-    # JogoService especializado. Referenciar a constante, em vez de repetir
-    # a tupla, é o que impede as duas allowlists de divergirem em silêncio.
     ("jogos", m.Jogo, sj.JogoSchema, sj.JogoEntradaSchema, "Jogo",
      ORDENACAO_JOGOS),
     ("generos", m.Genero, sj.GeneroSchema, sj.GeneroEntradaSchema, "Gênero",
@@ -60,12 +58,37 @@ CATALOGO = [
 ]
 
 
+class TopicoComProgressao(ServicoBase):
+    """Cria tópico e registra XP/conquista."""
+
+    def __init__(self, *args, progressao=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.progressao = progressao
+
+    def criar(self, dados_brutos: dict, usuario=None) -> dict:
+        resultado = super().criar(dados_brutos, usuario=usuario)
+        if usuario is not None and self.progressao:
+            self.progressao.registrar_acao(usuario.id, "topico", resultado.get("id"))
+        return resultado
+
+
+class RelatoComProgressao(ServicoBase):
+    """Proxy: o BugometroService já é o dono; este wrapper só existe se
+    precisarmos envolver. Na prática usamos o hook abaixo no bugometro."""
+
+
 def montar_servicos(vitrine_habilitada: bool = False) -> SimpleNamespace:
     repositorio_usuario = RepositorioUsuario()
+    progressao = ProgressaoService()
 
     servicos = SimpleNamespace(
+        progressao=progressao,
+        social=SocialService(progressao=progressao),
+        comunidade=ComunidadeService(progressao=progressao),
         auth=AuthService(
-            repositorio=repositorio_usuario, schema_saida=UsuarioSchema()
+            repositorio=repositorio_usuario,
+            schema_saida=UsuarioSchema(),
+            progressao=progressao,
         ),
         usuarios=ServicoBase(
             repositorio=repositorio_usuario,
@@ -74,26 +97,36 @@ def montar_servicos(vitrine_habilitada: bool = False) -> SimpleNamespace:
             nome_recurso="Usuário",
         ),
     )
-    # O dono de um Usuario é ele mesmo: o campo é 'id', não 'usuario_id'.
     servicos.usuarios.campo_dono = "id"
     servicos.usuarios.campo_autor = None
     servicos.usuarios.campos_de_admin = ("is_admin",)
 
     for atributo, model, saida, entrada, nome, ordenacao in CATALOGO:
-        setattr(
-            servicos,
-            atributo,
-            ServicoBase(
-                repositorio=RepositorioBase(model, ordenacao_permitida=ordenacao),
-                schema_saida=saida(),
-                schema_entrada=entrada(),
-                nome_recurso=nome,
-            ),
-        )
+        if atributo == "topicos":
+            setattr(
+                servicos,
+                atributo,
+                TopicoComProgressao(
+                    repositorio=RepositorioBase(model, ordenacao_permitida=ordenacao),
+                    schema_saida=saida(),
+                    schema_entrada=entrada(),
+                    nome_recurso=nome,
+                    progressao=progressao,
+                ),
+            )
+        else:
+            setattr(
+                servicos,
+                atributo,
+                ServicoBase(
+                    repositorio=RepositorioBase(model, ordenacao_permitida=ordenacao),
+                    schema_saida=saida(),
+                    schema_entrada=entrada(),
+                    nome_recurso=nome,
+                ),
+            )
 
-    # Substitui os services genéricos pelos especializados, que carregam
-    # as fórmulas do domínio.
-    from app.models import Alerta, BugometroStatus, Jogo, RelatoBug, VotoBug, HistoricoBug
+    from app.models import Alerta, BugometroStatus, HistoricoBug, Jogo, RelatoBug, VotoBug
     from app.repositories.jogo_repository import RepositorioJogos
     from app.services.alerta_service import AlertaService
     from app.services.bugometro_service import BugometroService
@@ -108,7 +141,14 @@ def montar_servicos(vitrine_habilitada: bool = False) -> SimpleNamespace:
 
     from app.repositories.voto_repository import RepositorioVotosBug
 
-    servicos.bugometro = BugometroService(
+    class BugometroComProgressao(BugometroService):
+        def criar(self, dados_brutos: dict, usuario=None) -> dict:
+            resultado = super().criar(dados_brutos, usuario=usuario)
+            if usuario is not None:
+                progressao.registrar_acao(usuario.id, "relato_bug", resultado.get("id"))
+            return resultado
+
+    servicos.bugometro = BugometroComProgressao(
         repositorio=RepositorioBase(
             RelatoBug,
             ordenacao_permitida=("criado_em", "confirmacoes", "severidade"),
@@ -119,16 +159,14 @@ def montar_servicos(vitrine_habilitada: bool = False) -> SimpleNamespace:
         repositorio_status=RepositorioBase(BugometroStatus),
         repositorio_jogos=RepositorioBase(Jogo),
         repositorio_votos=RepositorioVotosBug(),
-        repositorio_historico=RepositorioBase(HistoricoBug, ordenacao_permitida=("registrado_em",)),
+        repositorio_historico=RepositorioBase(
+            HistoricoBug, ordenacao_permitida=("registrado_em",)
+        ),
     )
 
-    # Confirmar um relato é ato de moderação: quem confirma sozinho o
-    # próprio bug contorna a exigência de eleitores distintos dos votos.
     servicos.bugometro.campos_de_admin = ("status", "confirmacoes")
     servicos.relatos_bug = servicos.bugometro
 
-    # Votar também mexe na pontuação: o voto atualiza confirmacoes e
-    # dispara o mesmo recálculo.
     from app.services.voto_service import VotoService
 
     servicos.votos_bug = VotoService(
@@ -149,13 +187,9 @@ def montar_servicos(vitrine_habilitada: bool = False) -> SimpleNamespace:
         nome_recurso="Alerta",
     )
 
-    # Conteúdo moderável: `oculto` some para quem não é admin (spec 4.8).
     for atributo in ("topicos", "posts", "avaliacoes", "relatos_bug"):
         getattr(servicos, atributo).campo_oculto = "oculto"
 
-    # Catálogo e operação: não têm dono, e escrever neles era trabalho do
-    # Django admin. Sem `somente_admin`, `campo_dono = None` deixaria
-    # qualquer conta recém-registrada apagar o catálogo inteiro.
     for atributo in ("jogos", "generos", "plataformas", "alertas", "categorias",
                      "badges", "metricas_bug", "historico_bug", "bugometro_status"):
         servico = getattr(servicos, atributo)
@@ -183,6 +217,9 @@ def montar_servicos(vitrine_habilitada: bool = False) -> SimpleNamespace:
         servico_usuarios=servicos.usuarios,
         servico_generos=servicos.generos,
         fonte_vitrine=fonte_vitrine,
+        servico_comunidade=servicos.comunidade,
+        servico_social=servicos.social,
+        servico_progressao=progressao,
     )
 
     return servicos

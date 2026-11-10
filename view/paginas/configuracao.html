@@ -143,13 +143,23 @@
               <div class="err" id="erro-bio" style="color:var(--critical);font-size:12px;margin-top:4px"></div>
             </div>
             <div>
-              <label for="idade" style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:6px">Idade</label>
-              <input type="number" name="idade" id="idade" min="0" step="1"
-                     style="width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font:inherit">
-              <div class="helptext" style="color:var(--text-dim);font-size:11px;margin-top:4px">Deixe em branco para não informar.</div>
-              <div class="err" id="erro-idade" style="color:var(--critical);font-size:12px;margin-top:4px"></div>
+              <label for="idade_readonly" style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:6px">Idade</label>
+              <input type="text" id="idade_readonly" readonly
+                     style="width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text-muted);font:inherit">
+              <div class="helptext" style="color:var(--text-dim);font-size:11px;margin-top:4px">Calculada pela data de nascimento do cadastro — não pode ser alterada.</div>
             </div>
             <button type="submit" class="btn btn--primary">Salvar perfil</button>
+          </form>
+
+          <div class="section-title" style="margin-top:22px">Foto de perfil</div>
+          <div class="err" id="cf-erro-avatar" style="color:var(--critical);font-size:12px;margin-top:8px" hidden></div>
+          <div class="estado" id="cf-sucesso-avatar" style="text-align:left;padding:0;margin-top:8px" hidden></div>
+          <form id="form-avatar" style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
+            <div id="cf-avatar-preview" class="avatar avatar-lg" style="width:72px;height:72px;display:flex;align-items:center;justify-content:center">—</div>
+            <input type="file" id="avatar_arquivo" accept="image/*">
+            <input type="url" id="avatar_url" placeholder="Ou cole a URL da foto"
+                   style="width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font:inherit">
+            <button type="submit" class="btn btn--primary">Salvar foto</button>
           </form>
         </div>
 

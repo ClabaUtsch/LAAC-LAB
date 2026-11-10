@@ -246,11 +246,17 @@ function iniciarCarrosselNoticias(noticias) {
   };
 
   const bloco = document.getElementById("home-noticias");
-  bloco.style.cursor = noticias[0].jogo_slug ? "pointer" : "";
+  const primeira = noticias[0];
+  bloco.style.cursor =
+    primeira.jogo_slug || primeira.url_externa ? "pointer" : "";
   bloco.onclick = (evento) => {
     if (evento.target.closest("#news-dots") || evento.target.closest(".hero-arrow")) return;
-    const slug = noticias[indiceNoticia].jogo_slug;
-    if (slug) location.href = "/jogo/" + slug;
+    const item = noticias[indiceNoticia];
+    if (item.url_externa) {
+      window.open(item.url_externa, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (item.jogo_slug) location.href = "/jogo/" + item.jogo_slug;
   };
   if (varios) {
     reiniciarTimerNoticias(noticias);

@@ -27,8 +27,13 @@ GRUPOS = {
         "alertas.html", "comunidade.html", "perfil.html",
         "explorar.html", "configuracao.html",
     ],
-    "autenticação": ["login.html", "registro.html"],
+    "autenticação": ["login.html"],
+    "registro": ["registro.html"],
+    "recuperar_senha": ["recuperar_senha.html"],
+    "redefinir_senha": ["redefinir_senha.html"],
+    "ranking": ["ranking.html"],
     "históricos": ["historicos.html"],
+    "perfil_publico": ["perfil_publico.html"],
 }
 
 

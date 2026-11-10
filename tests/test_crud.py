@@ -1,14 +1,11 @@
+from conftest import payload_registro
 import pytest
 
 
 def _registrar(cliente, nome, admin=False):
     corpo = cliente.post(
         "/api/auth/registro",
-        json={
-            "nome_usuario": nome,
-            "email": f"{nome}@l.dev",
-            "senha": "senha123",
-        },
+        json=payload_registro(nome_usuario=nome, email=f"{nome}@l.dev", senha="senha123",),
     ).get_json()
 
     if admin:
@@ -223,7 +220,7 @@ def test_conteudo_de_outro_usuario_nao_pode_ser_editado(cliente, cabecalho):
 
     outro = cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": "outro", "email": "o@l.dev", "senha": "senha123"},
+        json=payload_registro(nome_usuario="outro", email="o@l.dev", senha="senha123"),
     ).get_json()
     invasor = {"Authorization": f"Bearer {outro['token_acesso']}"}
 
@@ -319,7 +316,7 @@ def test_proxima_preserva_ordenar_por(cliente, cabecalho_admin):
 def test_usuario_nao_edita_outro_usuario(cliente, cabecalho_comum):
     outro = cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": "alheio", "email": "a@l.dev", "senha": "senha123"},
+        json=payload_registro(nome_usuario="alheio", email="a@l.dev", senha="senha123"),
     ).get_json()
 
     resposta = cliente.put(
@@ -333,7 +330,7 @@ def test_usuario_nao_edita_outro_usuario(cliente, cabecalho_comum):
 def test_usuario_nao_apaga_outro_usuario(cliente, cabecalho_comum):
     outro = cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": "vitima", "email": "v@l.dev", "senha": "senha123"},
+        json=payload_registro(nome_usuario="vitima", email="v@l.dev", senha="senha123"),
     ).get_json()
 
     resposta = cliente.delete(
@@ -518,7 +515,7 @@ def test_cliente_nao_grava_a_versao_de_sessao(cliente):
     o valor antigo ressuscita um token já revogado."""
     dados = cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": "alvo", "email": "a@l.dev", "senha": "senhaboa123"},
+        json=payload_registro(nome_usuario="alvo", email="a@l.dev", senha="senhaboa123"),
     ).get_json()
     cabecalho = {"Authorization": f"Bearer {dados['token_acesso']}"}
     identificador = dados["usuario"]["id"]
@@ -538,7 +535,7 @@ def test_colunas_de_revogacao_nao_saem_no_payload_publico(cliente):
     senha, e quantas vezes, não é informação de listagem."""
     cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": "alguem", "email": "b@l.dev", "senha": "senhaboa123"},
+        json=payload_registro(nome_usuario="alguem", email="b@l.dev", senha="senhaboa123"),
     )
     corpo = cliente.get("/api/v1/usuarios").get_json()
     for usuario in corpo["itens"]:

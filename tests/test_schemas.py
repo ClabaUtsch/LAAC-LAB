@@ -115,18 +115,18 @@ def test_entrada_de_jogo_aceita_carga_valida(app):
 
 
 def test_registro_exige_senha_de_pelo_menos_8(app):
+    from conftest import payload_registro
+
     with pytest.raises(ValidationError) as excecao:
-        RegistroSchema().load(
-            {"nome_usuario": "gamer", "email": "g@l.dev", "senha": "curta"}
-        )
+        RegistroSchema().load(payload_registro(senha="curta"))
     assert "senha" in excecao.value.messages
 
 
 def test_registro_valida_formato_de_email(app):
+    from conftest import payload_registro
+
     with pytest.raises(ValidationError) as excecao:
-        RegistroSchema().load(
-            {"nome_usuario": "gamer", "email": "nao-e-email", "senha": "senha123"}
-        )
+        RegistroSchema().load(payload_registro(email="nao-e-email"))
     assert "email" in excecao.value.messages
 
 

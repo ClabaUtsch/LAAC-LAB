@@ -1,3 +1,4 @@
+from conftest import payload_registro
 import pytest
 
 from app.errors import Conflito, DadosInvalidos, NaoAutorizado
@@ -30,7 +31,7 @@ def test_registrar_cria_usuario_com_senha_hasheada(app):
 
     servicos = montar_servicos()
     usuario, status = servicos.auth.registrar(
-        {"nome_usuario": "gamer", "email": "g@l.dev", "senha": "senha123"}
+        payload_registro(nome_usuario="gamer", email="g@l.dev", senha="senha123")
     )
     assert status == 201
     assert usuario["nome_usuario"] == "gamer"
@@ -42,7 +43,7 @@ def test_registrar_aplica_apelido_padrao_igual_ao_nome(app):
 
     servicos = montar_servicos()
     usuario, _ = servicos.auth.registrar(
-        {"nome_usuario": "gamer", "email": "g@l.dev", "senha": "senha123"}
+        payload_registro(nome_usuario="gamer", email="g@l.dev", senha="senha123")
     )
     assert usuario["apelido"] == "gamer"
 
@@ -52,11 +53,11 @@ def test_registrar_nome_repetido_levanta_conflito(app):
 
     servicos = montar_servicos()
     servicos.auth.registrar(
-        {"nome_usuario": "gamer", "email": "a@l.dev", "senha": "senha123"}
+        payload_registro(nome_usuario="gamer", email="a@l.dev", senha="senha123")
     )
     with pytest.raises(Conflito) as excecao:
         servicos.auth.registrar(
-            {"nome_usuario": "gamer", "email": "b@l.dev", "senha": "senha123"}
+            payload_registro(nome_usuario="gamer", email="b@l.dev", senha="senha123")
         )
     assert excecao.value.status == 409
 
@@ -68,11 +69,11 @@ def test_registrar_email_repetido_levanta_conflito(app):
     # Nomes com 3+ caracteres: o schema exige isso, e um nome curto
     # dispararia 422 antes de chegar na checagem de email duplicado.
     servicos.auth.registrar(
-        {"nome_usuario": "primeiro", "email": "mesmo@l.dev", "senha": "senha123"}
+        payload_registro(nome_usuario="primeiro", email="mesmo@l.dev", senha="senha123")
     )
     with pytest.raises(Conflito):
         servicos.auth.registrar(
-            {"nome_usuario": "segundo", "email": "mesmo@l.dev", "senha": "senha123"}
+            payload_registro(nome_usuario="segundo", email="mesmo@l.dev", senha="senha123")
         )
 
 
@@ -82,7 +83,7 @@ def test_registrar_senha_curta_levanta_dados_invalidos(app):
     servicos = montar_servicos()
     with pytest.raises(DadosInvalidos) as excecao:
         servicos.auth.registrar(
-            {"nome_usuario": "gamer", "email": "g@l.dev", "senha": "curta"}
+            payload_registro(nome_usuario="gamer", email="g@l.dev", senha="curta")
         )
     assert "senha" in excecao.value.erros
 
@@ -92,7 +93,7 @@ def test_autenticar_aceita_nome_de_usuario(app):
 
     servicos = montar_servicos()
     servicos.auth.registrar(
-        {"nome_usuario": "gamer", "email": "g@l.dev", "senha": "senha123"}
+        payload_registro(nome_usuario="gamer", email="g@l.dev", senha="senha123")
     )
     usuario, status = servicos.auth.autenticar(
         {"identificador": "gamer", "senha": "senha123"}
@@ -106,7 +107,7 @@ def test_autenticar_aceita_email(app):
 
     servicos = montar_servicos()
     servicos.auth.registrar(
-        {"nome_usuario": "gamer", "email": "g@l.dev", "senha": "senha123"}
+        payload_registro(nome_usuario="gamer", email="g@l.dev", senha="senha123")
     )
     usuario, _ = servicos.auth.autenticar(
         {"identificador": "g@l.dev", "senha": "senha123"}
@@ -119,7 +120,7 @@ def test_autenticar_senha_errada_levanta_401(app):
 
     servicos = montar_servicos()
     servicos.auth.registrar(
-        {"nome_usuario": "gamer", "email": "g@l.dev", "senha": "senha123"}
+        payload_registro(nome_usuario="gamer", email="g@l.dev", senha="senha123")
     )
     with pytest.raises(NaoAutorizado) as excecao:
         servicos.auth.autenticar({"identificador": "gamer", "senha": "errada"})
@@ -140,7 +141,7 @@ def test_autenticar_usuario_inexistente_levanta_401_e_nao_404(app):
 def test_post_registro_devolve_201_com_tokens(cliente):
     resposta = cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": "gamer", "email": "g@l.dev", "senha": "senha123"},
+        json=payload_registro(nome_usuario="gamer", email="g@l.dev", senha="senha123"),
     )
     assert resposta.status_code == 201
     corpo = resposta.get_json()
@@ -152,7 +153,7 @@ def test_post_registro_devolve_201_com_tokens(cliente):
 def test_post_login_devolve_tokens(cliente):
     cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": "gamer", "email": "g@l.dev", "senha": "senha123"},
+        json=payload_registro(nome_usuario="gamer", email="g@l.dev", senha="senha123"),
     )
     resposta = cliente.post(
         "/api/auth/login", json={"identificador": "gamer", "senha": "senha123"}
@@ -173,7 +174,7 @@ def test_post_login_errado_devolve_401_em_json(cliente):
 def test_renovar_troca_token_de_renovacao_por_acesso(cliente):
     registro = cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": "gamer", "email": "g@l.dev", "senha": "senha123"},
+        json=payload_registro(nome_usuario="gamer", email="g@l.dev", senha="senha123"),
     ).get_json()
 
     resposta = cliente.post(
@@ -194,7 +195,7 @@ def test_renovar_com_token_de_acesso_e_recusado(cliente):
     """
     registro = cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": "gamer", "email": "g@l.dev", "senha": "senha123"},
+        json=payload_registro(nome_usuario="gamer", email="g@l.dev", senha="senha123"),
     ).get_json()
 
     resposta = cliente.post(
@@ -268,7 +269,7 @@ def test_login_responde_identico_para_conta_inexistente_e_senha_errada(cliente):
     o status não pegaria uma regressão que mudasse o texto."""
     cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": "gamer", "email": "g@l.dev", "senha": "senha123"},
+        json=payload_registro(nome_usuario="gamer", email="g@l.dev", senha="senha123"),
     )
 
     inexistente = cliente.post(

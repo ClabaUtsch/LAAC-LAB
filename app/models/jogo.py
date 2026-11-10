@@ -29,7 +29,10 @@ class Jogo(db.Model):
 
     descricao = db.Column(db.Text)
     sobre = db.Column(db.Text)
+    #: Texto livre ou JSON com links de merch [{titulo,url}].
     merch = db.Column(db.Text)
+    #: Onde/como adquirir: JSON [{loja,url,como}].
+    links_compra = db.Column(db.JSON, default=None)
     classificacao = db.Column(db.String(10))
     desenvolvedora = db.Column(db.String(200))
     publicadora = db.Column(db.String(200))

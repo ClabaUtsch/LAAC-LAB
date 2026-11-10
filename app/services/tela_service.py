@@ -3,13 +3,17 @@
 Compõe SERVICES de domínio, nunca repositórios: cada regra continua morando
 com seu dono, e esta camada só monta o objeto que a tela consome.
 """
+from datetime import datetime, timedelta, timezone
+
 from app.services.formatacao import tempo_relativo, duracao_jogada
 from app.services.jogo_service import CAPA_PADRAO, gerar_iniciais
 from app.services.midia_catalogo import extras_do_slug
+from app.schemas.usuario import calcular_idade
 
 GRUPO_ASSUNTOS = "Últimos assuntos"
 SEM_ALERTA = "Nenhum alerta recente."
 XP_MAXIMO_PADRAO = 2000
+CACHE_INSTAVEIS_HORAS = 12
 
 
 class TelaService:
@@ -26,6 +30,9 @@ class TelaService:
         servico_usuarios=None,
         servico_generos=None,
         fonte_vitrine=None,
+        servico_comunidade=None,
+        servico_social=None,
+        servico_progressao=None,
     ):
         self.jogos = servico_jogos
         self.alertas_servico = servico_alertas
@@ -37,33 +44,41 @@ class TelaService:
         self.posts = servico_posts
         self.usuarios = servico_usuarios
         self.generos = servico_generos
-        # Callable injetado pela composição. None nos testes: a home
-        # não abre socket para a Steam/RAWG.
         self.fonte_vitrine = fonte_vitrine
+        self.comunidade_servico = servico_comunidade
+        self.social = servico_social
+        self.progressao = servico_progressao
+        self._cache_instaveis = {"em": None, "ids": []}
 
     # ------------------------------------------------------------------
     def eu(self, usuario_id: int) -> dict:
+        if self.progressao:
+            self.progressao.marcar_presenca(usuario_id)
         usuario = self.auth.obter_entidade(usuario_id)
+        idade = usuario.idade
+        if idade is None and usuario.data_nascimento:
+            idade = calcular_idade(usuario.data_nascimento)
         return {
             "id": usuario.id,
             "nome_usuario": usuario.nome_usuario,
-            # Nunca vazio: o JS não tem fallback para o card de nível.
             "apelido": usuario.apelido or usuario.nome_usuario,
             "email": usuario.email,
             "nivel": usuario.nivel,
             "xp": usuario.xp,
-            # Zero produziria NaN% na largura da barra de progresso.
             "xp_max": usuario.xp_max or XP_MAXIMO_PADRAO,
             "cor_avatar": usuario.cor_avatar,
             "bio": usuario.bio or "",
-            # Sem fallback: `None` é "não informada", e é o que
-            # configuracao.js usa para deixar o campo em branco em vez
-            # de reexibir um 0 que ninguém digitou.
-            "idade": usuario.idade,
+            "idade": idade,
+            "data_nascimento": (
+                usuario.data_nascimento.isoformat() if usuario.data_nascimento else ""
+            ),
             "conquistas": usuario.conquistas,
             "amigos": usuario.amigos,
             "dias_ativo": usuario.dias_ativo,
             "avatar_url": usuario.avatar_url or "",
+            "badges": (
+                self.progressao.listar_conquistas(usuario_id) if self.progressao else []
+            ),
         }
 
     # ------------------------------------------------------------------
@@ -145,12 +160,50 @@ class TelaService:
         return [{"grupo": GRUPO_ASSUNTOS, "titulo": t.titulo} for t in topicos]
 
     def _noticias(self, limite: int = 6) -> list[dict]:
-        """Tópicos recentes da comunidade, com a arte do jogo para o carrossel."""
-        topicos = self.topicos.listar_entidades(
-            por_pagina=limite, ordenar_por="-criado_em"
-        )
+        """Notícias em tempo real: tópicos tipo `noticia` + vitrine externa.
+
+        Não mistura relatos/alertas de bug — esses ficam em Atualizações.
+        """
         itens = []
         vistos = set()
+
+        if self.fonte_vitrine is not None:
+            try:
+                vitrine = self.fonte_vitrine() or {}
+            except Exception:
+                vitrine = {}
+            for cru in vitrine.get("itens") or []:
+                if not isinstance(cru, dict):
+                    continue
+                if (cru.get("tipo") or "") not in ("noticia", "lancamento", "atualizacao"):
+                    continue
+                titulo = (cru.get("titulo") or cru.get("jogo") or "").strip()
+                chave = titulo.lower()
+                if not titulo or chave in vistos:
+                    continue
+                vistos.add(chave)
+                itens.append(
+                    {
+                        "titulo": titulo,
+                        "resumo": (cru.get("resumo") or "")[:180],
+                        "quando": cru.get("quando") or "agora",
+                        "jogo": cru.get("jogo") or "",
+                        "jogo_slug": "",
+                        "url_externa": cru.get("url_externa") or cru.get("url") or "",
+                        "capa": list(CAPA_PADRAO),
+                        "imagem_capa": cru.get("imagem_capa") or cru.get("imagem") or "",
+                        "arquivo_capa": "",
+                        "fonte": "ao vivo",
+                    }
+                )
+                if len(itens) >= limite:
+                    return itens
+
+        topicos = self.topicos.listar_entidades(
+            por_pagina=limite * 2,
+            ordenar_por="-criado_em",
+            filtros={"tipo": "noticia"},
+        )
         for topico in topicos:
             chave = (topico.titulo or "").strip().lower()
             if chave in vistos:
@@ -168,9 +221,13 @@ class TelaService:
                     "quando": tempo_relativo(topico.criado_em),
                     "jogo": jogo.nome if jogo else "",
                     "jogo_slug": (jogo.slug or "") if jogo else "",
+                    "url_externa": "",
+                    "fonte": "comunidade",
                     **capa,
                 }
             )
+            if len(itens) >= limite:
+                break
         return itens
 
     def _cartoes_favoritos(self, usuario_id: int) -> list[dict]:
@@ -289,13 +346,37 @@ class TelaService:
         entidade = self.jogos.buscar_por_slug(slug)
         biblioteca = self._biblioteca_por_jogo(usuario)
         favorito, na_biblioteca = self._estado_no_card(entidade.id, biblioteca)
-        return self.jogos.montar_detalhe(
+        detalhe = self.jogos.montar_detalhe(
             entidade,
             comentarios=self._comentarios(entidade),
             bugs=self.bugometro_servico.listar_ativos(entidade, usuario=usuario),
             favorito=favorito,
             na_biblioteca=na_biblioteca,
         )
+        detalhe["similares"] = self._jogos_similares(entidade, biblioteca, limite=6)
+        detalhe["comunidade"] = {
+            "href": f"/comunidade?jogo={entidade.slug or ''}",
+            "membro": (
+                self.comunidade_servico.eh_membro(usuario.id, entidade.id)
+                if self.comunidade_servico and usuario
+                else False
+            ),
+            "membros": (
+                self.comunidade_servico.contar_membros(entidade.id)
+                if self.comunidade_servico
+                else 0
+            ),
+            "total_topicos": len(
+                [
+                    t
+                    for t in self.topicos.listar_entidades(
+                        por_pagina=50,
+                        filtros={"jogo_id": entidade.id},
+                    )
+                ]
+            ),
+        }
+        return detalhe
 
     def explorar(
         self,
@@ -338,6 +419,7 @@ class TelaService:
                 {"slug": g.slug or "", "nome": g.nome}
                 for g in self.generos.listar_todos(ordenar_por="nome")
             ],
+            "atualizado_em": datetime.now(timezone.utc).isoformat(),
         }
 
     def _card_explorar(self, jogo, favorito: bool, na_biblioteca: bool) -> dict:
@@ -370,6 +452,9 @@ class TelaService:
 
     def perfil(self, usuario_id: int) -> dict:
         entradas = self._entradas_da_biblioteca(usuario_id)[: self.RECENTES_NO_PERFIL]
+        amizades = self.social.listar_amigos(usuario_id) if self.social else {
+            "amigos": [], "pendentes": [], "enviadas": []
+        }
         return {
             "usuario": self.eu(usuario_id),
             "jogos_recentes": [
@@ -383,6 +468,10 @@ class TelaService:
                 for e in entradas
                 if e.jogo is not None
             ],
+            "amizades": amizades,
+            "conquistas_lista": (
+                self.progressao.listar_conquistas(usuario_id) if self.progressao else []
+            ),
         }
 
     # ------------------------------------------------------------------
@@ -463,19 +552,62 @@ class TelaService:
         return bool(entrada and entrada.favorito), entrada is not None
 
     def _top_instaveis(self, biblioteca: dict, limite: int = 4) -> list[dict]:
-        """Cartão completo: o JS mostrava iniciais hardcoded por falta
-        de slug, iniciais e capa aqui."""
-        jogos = self.jogos.listar_todos()
-        jogos.sort(
-            key=lambda j: j.bugometro.pontuacao if j.bugometro else 0, reverse=True
+        """Métrica de jogos instáveis atualizada a cada 12 horas."""
+        agora_utc = datetime.now(timezone.utc)
+        cache = self._cache_instaveis
+        precisa = (
+            cache["em"] is None
+            or (agora_utc - cache["em"]) >= timedelta(hours=CACHE_INSTAVEIS_HORAS)
+            or not cache["ids"]
         )
-        cartoes = []
-        for j in jogos[:limite]:
-            favorito, na_biblioteca = self._estado_no_card(j.id, biblioteca)
-            cartoes.append(
-                self.jogos.montar_card(j, favorito=favorito, na_biblioteca=na_biblioteca)
+        if precisa:
+            jogos = self.jogos.listar_todos()
+            jogos.sort(
+                key=lambda j: j.bugometro.pontuacao if j.bugometro else 0,
+                reverse=True,
             )
+            cache["ids"] = [j.id for j in jogos[:limite]]
+            cache["em"] = agora_utc
+
+        por_id = {j.id: j for j in self.jogos.listar_todos()}
+        cartoes = []
+        for jid in cache["ids"][:limite]:
+            j = por_id.get(jid)
+            if j is None:
+                continue
+            favorito, na_biblioteca = self._estado_no_card(j.id, biblioteca)
+            cartao = self.jogos.montar_card(
+                j, favorito=favorito, na_biblioteca=na_biblioteca
+            )
+            cartao["metricas_atualizadas_em"] = cache["em"].isoformat()
+            cartao["proxima_atualizacao_em"] = (
+                cache["em"] + timedelta(hours=CACHE_INSTAVEIS_HORAS)
+            ).isoformat()
+            cartoes.append(cartao)
         return cartoes
+
+    def _jogos_similares(self, jogo, biblioteca: dict, limite: int = 6) -> list[dict]:
+        genero_ids = {jg.genero_id for jg in (jogo.generos or [])}
+        if not genero_ids:
+            return []
+        candidatos = []
+        for outro in self.jogos.listar_todos(ordenar_por="-popularidade"):
+            if outro.id == jogo.id:
+                continue
+            ids = {jg.genero_id for jg in (outro.generos or [])}
+            score = len(genero_ids & ids)
+            if score:
+                candidatos.append((score, outro.popularidade or 0, outro))
+        candidatos.sort(key=lambda x: (x[0], x[1]), reverse=True)
+        saida = []
+        for _, __, outro in candidatos[:limite]:
+            favorito, na_biblioteca = self._estado_no_card(outro.id, biblioteca)
+            saida.append(
+                self.jogos.montar_card(
+                    outro, favorito=favorito, na_biblioteca=na_biblioteca
+                )
+            )
+        return saida
 
     def _comentarios(self, jogo) -> list[dict]:
         # Sem `usuario=`: conteúdo moderado não aparece na tela pública,
@@ -506,32 +638,80 @@ class TelaService:
     TOPICOS_NA_TELA = 20
     ALERTAS_NA_TELA = 10
 
-    def comunidade(self, slug: str | None = None) -> dict:
+    def comunidade(
+        self,
+        slug: str | None = None,
+        usuario_id: int | None = None,
+        busca: str | None = None,
+        biblioteca_apenas: bool = False,
+    ) -> dict:
         topicos = self.topicos.listar_todos(ordenar_por="-criado_em")
         por_jogo = {}
         for topico in topicos:
             por_jogo[topico.jogo_id] = por_jogo.get(topico.jogo_id, 0) + 1
 
         jogos = self.jogos.listar_todos(ordenar_por="nome")
-        cartoes = [self._cartao_de_praca(j, por_jogo.get(j.id, 0)) for j in jogos]
+        ids_biblioteca = set()
+        if usuario_id is not None:
+            ids_biblioteca = {
+                e.jogo_id
+                for e in self.biblioteca_servico.listar_todos(
+                    filtros={"usuario_id": usuario_id}
+                )
+            }
 
-        selecionado = self._selecionar_praca(slug, jogos, por_jogo)
+        consulta = (busca or "").strip().casefold()
+        filtrados = []
+        for j in jogos:
+            if biblioteca_apenas and j.id not in ids_biblioteca:
+                continue
+            if consulta and consulta not in (j.nome or "").casefold() and consulta not in (
+                j.slug or ""
+            ).casefold():
+                continue
+            filtrados.append(j)
+
+        cartoes = [
+            self._cartao_de_praca(
+                j,
+                por_jogo.get(j.id, 0),
+                membro=(
+                    self.comunidade_servico.eh_membro(usuario_id, j.id)
+                    if self.comunidade_servico and usuario_id
+                    else False
+                ),
+                na_biblioteca=j.id in ids_biblioteca,
+            )
+            for j in filtrados
+        ]
+
+        selecionado = self._selecionar_praca(slug, filtrados or jogos, por_jogo)
         visiveis = [
             t for t in topicos if selecionado is None or t.jogo_id == selecionado.id
         ]
+        membro = False
+        if selecionado is not None and usuario_id and self.comunidade_servico:
+            membro = self.comunidade_servico.eh_membro(usuario_id, selecionado.id)
 
         return {
             "selecionado": (
-                self._cartao_de_praca(selecionado, por_jogo.get(selecionado.id, 0))
+                self._cartao_de_praca(
+                    selecionado,
+                    por_jogo.get(selecionado.id, 0),
+                    membro=membro,
+                    na_biblioteca=selecionado.id in ids_biblioteca,
+                )
                 if selecionado is not None
                 else None
             ),
+            "membro": membro,
             "jogos": cartoes,
             "topicos": [
                 self._topico_em_card(t) for t in visiveis[: self.TOPICOS_NA_TELA]
             ],
             "estatisticas": self._estatisticas(topicos),
             "regras": list(self.REGRAS_COMUNIDADE),
+            "busca": consulta,
         }
 
     def alertas(self, usuario_id: int) -> dict:
@@ -563,16 +743,23 @@ class TelaService:
         }
 
     # ------------------------------------------------------------------
-    def _cartao_de_praca(self, jogo, total: int) -> dict:
+    def _cartao_de_praca(
+        self, jogo, total: int, membro: bool = False, na_biblioteca: bool = False
+    ) -> dict:
         return {
-            "id": jogo.id,  # criar tópico exige `jogo_id`
+            "id": jogo.id,
             "slug": jogo.slug or "",
             "nome": jogo.nome,
-            # Mesma regra de `jogo_service.montar_card`: reaproveita
-            # `gerar_iniciais`, não uma segunda decisão (defeito 7).
             "iniciais": jogo.iniciais or gerar_iniciais(jogo.nome),
             **self._capa_completa(jogo),
             "total_topicos": total,
+            "membros": (
+                self.comunidade_servico.contar_membros(jogo.id)
+                if self.comunidade_servico
+                else 0
+            ),
+            "membro": membro,
+            "na_biblioteca": na_biblioteca,
         }
 
     def _selecionar_praca(self, slug, jogos, por_jogo):

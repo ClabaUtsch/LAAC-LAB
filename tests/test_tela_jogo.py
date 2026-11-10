@@ -1,3 +1,4 @@
+from conftest import payload_registro
 from pathlib import Path
 
 from test_frontend import _sem_comentarios
@@ -58,7 +59,7 @@ def test_relatar_bug_titulo_longo_devolve_erros_por_campo_e_js_usa(cliente, app)
 
     entrada = cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": "relator", "email": "relator@l.dev", "senha": "senha123"},
+        json=payload_registro(nome_usuario="relator", email="relator@l.dev", senha="senha123"),
     ).get_json()
     cabecalho = {"Authorization": f"Bearer {entrada['token_acesso']}"}
 

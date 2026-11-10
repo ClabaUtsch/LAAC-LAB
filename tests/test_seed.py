@@ -1,3 +1,4 @@
+from conftest import payload_registro
 import pytest
 
 
@@ -276,7 +277,7 @@ def test_semear_duas_vezes_nao_duplica(app, semeado):
 def _registrar(cliente, nome):
     return cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": nome, "email": f"{nome}@l.dev", "senha": "senha123"},
+        json=payload_registro(nome_usuario=nome, email=f"{nome}@l.dev", senha="senha123"),
     ).get_json()
 
 

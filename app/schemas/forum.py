@@ -41,6 +41,7 @@ class PostSchema(SchemaBase):
 class PostEntradaSchema(SchemaEntradaBase):
     topico_id = fields.Int(required=True)
     conteudo = fields.Str(required=True, validate=validate.Length(min=1))
+    parent_id = fields.Int(load_default=None, allow_none=True)
 
     class Meta(SchemaEntradaBase.Meta):
         model = Post

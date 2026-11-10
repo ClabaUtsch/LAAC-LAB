@@ -20,8 +20,11 @@ class Usuario(db.Model):
     senha_hash = db.Column(db.String(255), nullable=False)
 
     apelido = db.Column(db.String(50), default="")
-    data_nascimento = db.Column(db.Date, nullable=False) 
+    #: Obrigatória no cadastro via schema; nullable para contas legadas/seed de teste.
+    data_nascimento = db.Column(db.Date, nullable=True)
     idade = db.Column(db.Integer)
+    #: CPF só dígitos (11). Obrigatório no cadastro novo.
+    cpf = db.Column(db.String(11), unique=True)
     avatar_url = db.Column(db.Text)
     bio = db.Column(db.String(280), default="")
 
@@ -32,6 +35,10 @@ class Usuario(db.Model):
     conquistas = db.Column(db.Integer, default=0, nullable=False)
     amigos = db.Column(db.Integer, default=0, nullable=False)
     dias_ativo = db.Column(db.Integer, default=0, nullable=False)
+    #: Último dia civil em que a pessoa usou a plataforma (UTC).
+    ultimo_dia_ativo = db.Column(db.Date)
+    aceite_termos_em = db.Column(db.DateTime)
+    email_verificado = db.Column(db.Boolean, default=False, nullable=False)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
 
     criado_em = db.Column(db.DateTime, default=agora)
