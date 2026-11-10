@@ -1,10 +1,11 @@
+from conftest import payload_registro
 import pytest
 
 
 def _cabecalho(cliente, nome="gamer"):
     corpo = cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": nome, "email": f"{nome}@l.dev", "senha": "senha123"},
+        json=payload_registro(nome_usuario=nome, email=f"{nome}@l.dev", senha="senha123"),
     ).get_json()
     return {"Authorization": f"Bearer {corpo['token_acesso']}"}
 
@@ -133,9 +134,11 @@ def test_comunidade_devolve_as_cinco_chaves(cliente, praca):
     corpo = cliente.get(
         "/api/v1/telas/comunidade", headers=praca["cabecalho"]
     ).get_json()
-    assert set(corpo) == {
+    assert {
         "selecionado", "jogos", "topicos", "estatisticas", "regras",
-    }
+    }.issubset(set(corpo))
+    assert "membro" in corpo
+    assert "busca" in corpo
 
 
 def test_sem_parametro_seleciona_o_jogo_com_mais_topicos(cliente, praca):

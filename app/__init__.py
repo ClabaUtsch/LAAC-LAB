@@ -56,6 +56,18 @@ def create_app(config_object=None):
     from app.controllers.usuario_controller import criar_blueprint_usuario
     app.register_blueprint(criar_blueprint_usuario())
 
+    from app.controllers.social_controller import criar_blueprint_social
+    from app.controllers.comunidade_controller import criar_blueprint_comunidade
+
+    app.register_blueprint(
+        criar_blueprint_social(
+            servicos.social, servicos.auth, servico_progressao=servicos.progressao
+        )
+    )
+    app.register_blueprint(
+        criar_blueprint_comunidade(servicos.comunidade, servicos.auth, servicos.telas)
+    )
+
     @app.get("/saude")
     def saude():
         return jsonify({"status": "ok"})
@@ -90,7 +102,7 @@ def _registrar_handlers_jwt():
         from app.extensions import db
         from app.models import Usuario
 
-        usuario = db.session.get(Usuario, int(identidade)) 
+        usuario = db.session.get(Usuario, int(identidade))  # guarda: excecao declarada
         return {"versao_sessao": usuario.versao_sessao if usuario else 0}
 
     @jwt.token_in_blocklist_loader
@@ -107,7 +119,7 @@ def _registrar_handlers_jwt():
         from app.extensions import db
         from app.models import Usuario
 
-        usuario = db.session.get(Usuario, int(payload["sub"]))  
+        usuario = db.session.get(Usuario, int(payload["sub"]))  # guarda: excecao declarada
         if usuario is None:
             return True
         return payload.get("versao_sessao", 0) != usuario.versao_sessao

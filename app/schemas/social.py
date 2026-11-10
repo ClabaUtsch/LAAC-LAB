@@ -1,7 +1,7 @@
-"""Schemas de badges, notificações e atividades."""
-from marshmallow import fields, validate
+"""Schemas de badges, notificações, atividades e amizades."""
+from marshmallow import Schema, fields, validate
 
-from app.models import Atividade, Badge, Notificacao, UsuarioBadge
+from app.models import Amizade, Atividade, Badge, Notificacao, UsuarioBadge
 from app.schemas.base import SchemaBase, SchemaEntradaBase
 
 
@@ -12,9 +12,23 @@ class BadgeSchema(SchemaBase):
 
 class BadgeEntradaSchema(SchemaEntradaBase):
     nome = fields.Str(required=True, validate=validate.Length(min=1, max=50))
+    codigo = fields.Str(load_default=None, allow_none=True, validate=validate.Length(max=40))
 
     class Meta(SchemaEntradaBase.Meta):
         model = Badge
+
+
+class AmizadeSchema(SchemaBase):
+    class Meta(SchemaBase.Meta):
+        model = Amizade
+
+
+class PedidoAmizadeSchema(Schema):
+    destinatario_id = fields.Int(required=True)
+
+
+class RespostaAmizadeSchema(Schema):
+    aceitar = fields.Bool(required=True)
 
 
 class UsuarioBadgeSchema(SchemaBase):

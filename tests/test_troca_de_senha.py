@@ -1,3 +1,4 @@
+from conftest import payload_registro
 """Trocar a senha tem que derrubar as sessões antigas.
 
 JWT não se revoga sozinho: sem uma marca no usuário, o refresh de 7 dias
@@ -9,7 +10,7 @@ com o invasor dentro por uma semana.
 def _registrar(cliente, nome="alguem"):
     return cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": nome, "email": f"{nome}@l.dev", "senha": "senhaantiga1"},
+        json=payload_registro(nome_usuario=nome, email=f"{nome}@l.dev", senha="senhaantiga1"),
     ).get_json()
 
 

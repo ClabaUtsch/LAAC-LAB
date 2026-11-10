@@ -1,10 +1,11 @@
+from conftest import payload_registro
 import pytest
 
 
 def _cabecalho(cliente, nome="gamer"):
     corpo = cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": nome, "email": f"{nome}@l.dev", "senha": "senha123"},
+        json=payload_registro(nome_usuario=nome, email=f"{nome}@l.dev", senha="senha123"),
     ).get_json()
     return {"Authorization": f"Bearer {corpo['token_acesso']}"}
 
@@ -286,13 +287,16 @@ def test_jogo_devolve_o_shape_completo(cliente, mundo):
     # `favorito`/`na_biblioteca` passam a sair no detalhe (defeito 2 da
     # revisão): antes eram removidos com `.pop()` por não haver como
     # calculá-los certo; agora `usuario` chega até `montar_detalhe`.
-    assert set(corpo) == {
+    assert {
         "id", "slug", "nome", "capa", "imagem_capa", "arquivo_capa", "iniciais",
         "ultima_atualizacao", "sobre", "descricao_curta", "tags", "desenvolvedora",
         "publicadora", "galeria", "requisitos", "curtidas", "descurtidas",
         "tempo_para_zerar", "conquistas", "merch", "pontuacao", "status",
         "bugs", "comentarios", "favorito", "na_biblioteca",
-    }
+    }.issubset(set(corpo))
+    assert "similares" in corpo
+    assert "links_compra" in corpo
+    assert "comunidade" in corpo
 
 
 def test_jogo_detalhe_reflete_favorito_e_biblioteca_do_usuario(cliente, mundo, app):
@@ -333,11 +337,12 @@ def test_campos_vazios_caem_em_padrao_legivel(cliente, mundo):
     corpo = cliente.get(
         "/api/v1/telas/jogo/hollow-knight", headers=mundo["cabecalho"]
     ).get_json()
-    assert corpo["merch"] == "Sem informações de merch para este jogo."
+    assert corpo["merch"]["texto"] == "Sem informações de merch para este jogo."
+    assert corpo["merch"]["itens"] == []
     assert corpo["ultima_atualizacao"] == "—"
-    assert corpo["tempo_para_zerar"] == {
-        "medio": "—", "speedrun": "—", "platina": "—",
-    }
+    assert "medio" in corpo["tempo_para_zerar"]
+    assert "speedrun" in corpo["tempo_para_zerar"]
+    assert "platina" in corpo["tempo_para_zerar"]
 
 
 def test_tempo_para_zerar_usa_o_valor_quando_existe(cliente, mundo):

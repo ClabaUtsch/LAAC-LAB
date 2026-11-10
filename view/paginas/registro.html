@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/estatico/css/estilos.css">
 </head>
 <body data-tela="registro" data-casca="auth">
+<!-- CASCA:INICIO -->
   <div class="auth">
     <div class="brand">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -14,6 +15,7 @@
       </svg>
       <span>LaaC<span style="color:var(--brand)">Lab</span></span>
     </div>
+<!-- CASCA:FIM -->
     <div id="conteudo">
       <h1>Criar conta</h1>
       <p class="sub">Junte-se à comunidade do Bugômetro.</p>
@@ -37,8 +39,15 @@
         <div>
           <label for="data_nascimento">Data de nascimento</label>
           <input type="date" name="data_nascimento" id="data_nascimento" required>
-          <div class="helptext">Necessário ter 16 anos ou mais.</div>
+          <div class="helptext">Necessário ter 16 anos ou mais. A idade não poderá ser alterada depois.</div>
           <div class="err" id="erro-data_nascimento"></div>
+        </div>
+
+        <div>
+          <label for="cpf">CPF</label>
+          <input type="text" name="cpf" id="cpf" inputmode="numeric" autocomplete="off" required maxlength="14" placeholder="000.000.000-00">
+          <div class="helptext">Obrigatório para criar a conta.</div>
+          <div class="err" id="erro-cpf"></div>
         </div>
 
         <div>
@@ -48,19 +57,22 @@
           <div class="err" id="erro-senha"></div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: flex-start; gap: 8px; margin-top: 4px; margin-bottom: 8px;">
           <input type="checkbox" id="termos" name="termos" required style="width: auto; margin: 0; cursor: pointer;">
           <label for="termos" style="margin: 0; font-weight: normal; font-size: 13px; cursor: pointer; color: var(--text-dim, #8b92a5);">
-            Declaro ter 16 anos ou mais e aceito os Termos de Uso do LAAC-LAB.
+            Declaro ter 16 anos ou mais e aceito os Termos de Uso e a Política de Privacidade do LAAC-LAB.
           </label>
         </div>
+        <div class="err" id="erro-termos" style="margin-bottom: 12px;"></div>
 
         <button type="submit" class="btn btn--primary">Criar conta</button>
       </form>
 
       <p class="alt">Já tem conta? <a href="/login">Entrar</a></p>
     </div>
+<!-- CASCA:RODAPE:INICIO -->
   </div>
+<!-- CASCA:RODAPE:FIM -->
 <script src="/estatico/js/api.js"></script>
 <script src="/estatico/js/casca.js"></script>
 <script src="/estatico/js/registro.js"></script>

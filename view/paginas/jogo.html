@@ -162,10 +162,30 @@
         <textarea id="jg-sessao-notas" class="sessao-notas" rows="3" maxlength="500" placeholder="Notas desta sessão (ficam só neste navegador)"></textarea>
       </section>
 
+      <section class="store-block card" id="jg-comunidade-bloco">
+        <div class="section-title">Comunidade deste jogo</div>
+        <p class="muted" id="jg-comunidade-texto" style="margin:8px 0 12px">—</p>
+        <div class="row" style="gap:8px;flex-wrap:wrap">
+          <a class="btn btn--primary" id="jg-comunidade-link" href="/comunidade">Abrir fórum do jogo</a>
+          <button type="button" class="btn btn--outline" id="jg-comunidade-entrar">Entrar na praça</button>
+        </div>
+      </section>
+
+      <section class="store-block card">
+        <div class="section-title">Onde adquirir</div>
+        <div id="jg-compra" class="mt"></div>
+      </section>
+
+      <section class="store-block card">
+        <div class="section-title">Jogos similares</div>
+        <div class="game-picker mt" id="jg-similares"></div>
+      </section>
+
       <div class="store-bottom">
         <div class="card">
-          <div class="section-title">Acesso ao merch</div>
+          <div class="section-title">Merch e links oficiais</div>
           <p class="muted" id="jg-merch" style="margin:10px 0 0">—</p>
+          <div id="jg-merch-links" class="mt"></div>
         </div>
         <div class="card">
           <div class="section-title">Bugs reportados</div>

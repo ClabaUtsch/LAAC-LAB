@@ -1,3 +1,4 @@
+from conftest import payload_registro
 """Vitrine externa: normalização sem rede, e o endpoint desligado na suíte."""
 from app.integracoes.vitrine_externa import obter_vitrine
 
@@ -133,7 +134,7 @@ def test_endpoint_exige_sessao_e_vem_vazio_na_suíte(cliente):
 
     entrada = cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": "vitrine", "email": "vitrine@l.dev", "senha": "senha123"},
+        json=payload_registro(nome_usuario="vitrine", email="vitrine@l.dev", senha="senha123"),
     ).get_json()
     corpo = cliente.get(
         "/api/v1/telas/vitrine",

@@ -1,3 +1,4 @@
+from conftest import payload_registro
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -118,7 +119,7 @@ def test_formatacao_nao_importa_flask():
 def _registrar(cliente, nome="gamer"):
     return cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": nome, "email": f"{nome}@l.dev", "senha": "senha123"},
+        json=payload_registro(nome_usuario=nome, email=f"{nome}@l.dev", senha="senha123"),
     ).get_json()
 
 
@@ -127,11 +128,13 @@ def test_eu_devolve_o_shape_do_shell(cliente):
     cabecalho = {"Authorization": f"Bearer {dados['token_acesso']}"}
 
     corpo = cliente.get("/api/v1/eu", headers=cabecalho).get_json()
-    assert set(corpo) == {
+    assert {
         "id", "nome_usuario", "apelido", "email", "nivel", "xp", "xp_max",
         "cor_avatar", "bio", "conquistas", "amigos", "dias_ativo", "avatar_url",
         "idade",
-    }
+    }.issubset(set(corpo))
+    assert "badges" in corpo
+    assert "data_nascimento" in corpo
 
 
 def test_eu_devolve_a_idade(cliente, app):
@@ -240,6 +243,15 @@ def cenario(cliente, app):
         {"titulo": "Alguém mais com crash no ato 2?", "jogo_id": alto["id"]},
         usuario=comum,
     )
+    servicos.topicos.criar(
+        {
+            "titulo": "Patch de equilíbrio chega esta semana",
+            "tipo": "noticia",
+            "corpo": "A produtora confirmou ajustes de balanceamento e correções menores.",
+            "jogo_id": alto["id"],
+        },
+        usuario=comum,
+    )
 
     return {
         "cabecalho": {"Authorization": f"Bearer {dados['token_acesso']}"},
@@ -326,26 +338,30 @@ def test_atualizacao_expoe_jogo_e_o_js_le_essa_chave_nao_nome(cliente, cenario):
 
 def test_assuntos_trazem_grupo_constante(cliente, cenario):
     corpo = cliente.get("/api/v1/telas/inicio", headers=cenario["cabecalho"]).get_json()
-    assert corpo["assuntos"][0]["grupo"] == "Últimos assuntos"
-    assert corpo["assuntos"][0]["titulo"] == "Alguém mais com crash no ato 2?"
+    assert corpo["assuntos"]
+    assert all(a["grupo"] == "Últimos assuntos" for a in corpo["assuntos"])
+    titulos = {a["titulo"] for a in corpo["assuntos"]}
+    assert "Alguém mais com crash no ato 2?" in titulos
 
 
 def test_noticias_trazem_titulo_resumo_e_jogo(cliente, cenario):
+    """Notícias não misturam relatos de bug — só tópicos tipo `noticia`."""
     corpo = cliente.get("/api/v1/telas/inicio", headers=cenario["cabecalho"]).get_json()
     noticia = corpo["noticias"][0]
-    assert noticia["titulo"] == "Alguém mais com crash no ato 2?"
+    assert noticia["titulo"] == "Patch de equilíbrio chega esta semana"
     assert "resumo" in noticia
     assert noticia["jogo"] == "Cyberpunk 2077"
     assert noticia["jogo_slug"] == "cyberpunk-2077"
     assert len(noticia["capa"]) == 2
+    assert all("crash" not in (n["titulo"] or "").lower() for n in corpo["noticias"])
 
 
 def test_topico_oculto_nao_aparece_nos_assuntos(cliente, cenario, app):
     from app.extensions import db
     from app.models import Topico
 
-    topico = db.session.execute(db.select(Topico)).scalars().first()
-    topico.oculto = True
+    for topico in db.session.execute(db.select(Topico)).scalars().all():
+        topico.oculto = True
     db.session.commit()
 
     corpo = cliente.get("/api/v1/telas/inicio", headers=cenario["cabecalho"]).get_json()

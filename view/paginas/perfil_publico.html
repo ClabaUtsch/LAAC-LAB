@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Perfil · LaaCLab</title>
+  <link rel="stylesheet" href="/estatico/css/estilos.css">
+</head>
+<body data-tela="perfil">
+<!-- CASCA:INICIO -->
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--brand)">
+        <path d="M9 3h6M10 3v6l-5.5 9.5A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3L14 9V3"/>
+        <path d="M7.5 15h9"/>
+      </svg>
+      <span>LaaC<span style="color:var(--brand)">Lab</span></span>
+    </div>
+    <nav class="nav">
+      <a class="nav-item" data-tela="inicio" href="/">Início</a>
+      <a class="nav-item" data-tela="biblioteca" href="/biblioteca">Meus jogos</a>
+      <a class="nav-item" data-tela="explorar" href="/explorar">Explorar</a>
+      <a class="nav-item" data-tela="comunidade" href="/comunidade">Comunidade</a>
+      <a class="nav-item" data-tela="ranking" href="/ranking">Ranking</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <a class="nav-item" href="/configuracao" data-tela="configuracao">Configuração</a>
+      <div class="level-card">
+        <div class="who">
+          <div class="flame">🔥</div>
+          <div>
+            <div style="font-weight:700"><span id="sb-nome">—</span></div>
+            <div class="lvl" id="sb-nivel">Nível —</div>
+          </div>
+        </div>
+        <div class="progress"><span id="sb-xp-barra" style="width:0"></span></div>
+        <div class="xp" id="sb-xp">— / — XP</div>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <div class="search">
+        <input id="casca-busca" type="search" placeholder="Buscar jogos..." aria-label="Buscar jogos" autocomplete="off">
+        <div id="casca-busca-sugestoes" class="search-sugestoes" hidden></div>
+      </div>
+      <div class="topbar-actions">
+        <a class="avatar js-avatar" href="/perfil" title="Perfil">GP</a>
+      </div>
+    </header>
+<!-- CASCA:FIM -->
+    <main class="page" id="conteudo">
+      <div class="profile-head" id="pp-usuario">
+        <div id="pp-avatar" class="avatar avatar-lg">—</div>
+        <div>
+          <div id="pp-name" style="font-size:32px;font-weight:800">—</div>
+          <div id="pp-level" class="muted" style="margin-top:4px">Nível —</div>
+          <div id="pp-bio" class="muted" style="margin-top:12px">—</div>
+          <div class="row" style="gap:8px;margin-top:14px">
+            <button class="btn btn--primary" id="pp-add" type="button">Adicionar amigo</button>
+            <a class="btn btn--outline" href="/perfil">Meu perfil</a>
+          </div>
+          <div id="pp-status" class="dim" style="margin-top:8px"></div>
+        </div>
+        <div class="profile-stats">
+          <div><div class="n" id="pp-achievements">—</div><div class="l">Conquistas</div></div>
+          <div><div class="n" id="pp-friends">—</div><div class="l">Amigos</div></div>
+          <div><div class="n" id="pp-days">—</div><div class="l">Dias ativo</div></div>
+        </div>
+      </div>
+    </main>
+<!-- CASCA:RODAPE:INICIO -->
+  </div>
+</div>
+<!-- CASCA:RODAPE:FIM -->
+<script src="/estatico/js/api.js"></script>
+<script src="/estatico/js/casca.js"></script>
+<script src="/estatico/js/perfil_publico.js"></script>
+</body>
+</html>

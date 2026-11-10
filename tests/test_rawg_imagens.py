@@ -1,3 +1,4 @@
+from conftest import payload_registro
 """RAWG: cliente, associação, preenchimento, importação, proxy e telas.
 Nenhum teste faz chamada de rede: a RAWG é simulada."""
 import pytest
@@ -336,7 +337,7 @@ def test_detalhe_do_jogo_com_imagem_rawg_passa_pelo_proxy_liberado(app, cliente)
     jogo = novo_jogo("Jogo Rawg", "jogo-rawg", capa_url=IMG)
     corpo = cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": "gamer", "email": "gamer@l.dev", "senha": "senha123"},
+        json=payload_registro(nome_usuario="gamer", email="gamer@l.dev", senha="senha123"),
     ).get_json()
     cab = {"Authorization": f"Bearer {corpo['token_acesso']}"}
     resposta = cliente.get("/api/v1/telas/jogo/jogo-rawg", headers=cab)

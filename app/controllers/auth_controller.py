@@ -43,8 +43,16 @@ def criar_blueprint_auth(servico_auth) -> Blueprint:
     def trocar_senha():
         usuario = obter_usuario_atual(servico_auth)
         servico_auth.trocar_senha(usuario.id, request.get_json(silent=True) or {})
-        # Tokens novos: sem eles a pessoa seria deslogada pela própria
-        # revogação que acabou de acionar.
         return jsonify(_tokens(usuario.id)), 200
+
+    @bp.post("/recuperar-senha")
+    def recuperar_senha():
+        corpo = servico_auth.pedir_recuperacao(request.get_json(silent=True) or {})
+        return jsonify(corpo), 200
+
+    @bp.post("/redefinir-senha")
+    def redefinir_senha():
+        corpo = servico_auth.redefinir_senha(request.get_json(silent=True) or {})
+        return jsonify(corpo), 200
 
     return bp

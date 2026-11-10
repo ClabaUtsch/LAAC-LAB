@@ -1,3 +1,4 @@
+from conftest import payload_registro
 """Testes estruturais das telas de login e registro.
 
 Não abrem navegador: verificam que os campos existem no HTML servido e

@@ -35,8 +35,16 @@ async function preencherUsuario() {
     barra.style.width = Math.round((eu.xp / eu.xp_max) * 100) + "%";
   }
   document.querySelectorAll(".js-avatar").forEach((a) => {
-    a.textContent = Api.iniciaisDe(eu.nome_usuario);
-    a.style.background = eu.cor_avatar;
+    if (eu.avatar_url) {
+      a.textContent = "";
+      a.style.backgroundImage = `url(${eu.avatar_url})`;
+      a.style.backgroundSize = "cover";
+      a.style.backgroundPosition = "center";
+    } else {
+      a.textContent = Api.iniciaisDe(eu.nome_usuario);
+      a.style.backgroundImage = "";
+      a.style.background = eu.cor_avatar;
+    }
   });
 }
 

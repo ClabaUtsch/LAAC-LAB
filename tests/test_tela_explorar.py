@@ -1,10 +1,11 @@
+from conftest import payload_registro
 import pytest
 
 
 def _cabecalho(cliente, nome="gamer"):
     corpo = cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": nome, "email": f"{nome}@l.dev", "senha": "senha123"},
+        json=payload_registro(nome_usuario=nome, email=f"{nome}@l.dev", senha="senha123"),
     ).get_json()
     return {"Authorization": f"Bearer {corpo['token_acesso']}"}
 

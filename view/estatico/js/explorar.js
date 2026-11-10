@@ -300,6 +300,14 @@ async function iniciarExplorar() {
   });
 
   await carregar(montarCaminhoDaBusca(), true);
+
+  // Catálogo em tempo quase real: atualiza a grade a cada 60s quando a
+  // aba está visível e sem busca/paginação intermediária.
+  setInterval(() => {
+    if (document.hidden) return;
+    if (document.getElementById("ex-busca").value.trim()) return;
+    recarregarDoZero();
+  }, 60_000);
 }
 
 Api.aoCarregar(iniciarExplorar);

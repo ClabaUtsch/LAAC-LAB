@@ -21,3 +21,24 @@ class RepositorioUsuario(RepositorioBase):
         """Busca os usuários ordenados do maior para o menor XP para formar o Leaderboard."""
         consulta = db.select(Usuario).order_by(Usuario.xp.desc()).limit(limite)
         return db.session.execute(consulta).scalars().all()
+
+    def buscar_por_email(self, email: str):
+        consulta = db.select(Usuario).where(Usuario.email == email)
+        return db.session.execute(consulta).scalars().first()
+
+    def existe_cpf(self, cpf: str) -> bool:
+        consulta = db.select(Usuario.id).where(Usuario.cpf == cpf)
+        return db.session.execute(consulta).scalars().first() is not None
+
+    def buscar_pessoas(self, consulta_texto: str, excluir_id: int, limite: int = 20):
+        like = f"%{(consulta_texto or '').strip()}%"
+        consulta = (
+            db.select(Usuario)
+            .where(
+                Usuario.id != excluir_id,
+                (Usuario.nome_usuario.ilike(like)) | (Usuario.apelido.ilike(like)),
+            )
+            .order_by(Usuario.nome_usuario)
+            .limit(limite)
+        )
+        return list(db.session.execute(consulta).scalars().all())

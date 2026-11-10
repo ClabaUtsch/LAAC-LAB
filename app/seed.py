@@ -319,13 +319,34 @@ def _existe(model, *condicoes) -> bool:
 
 
 def _garantir_usuario(Usuario, nome, senha, admin):
+    from datetime import date, datetime, timezone
+
+    from app.services.cpf import limpar_cpf
+
+    def _cpf(seed: int) -> str:
+        base = f"{seed % 10**9:09d}"
+        def dv(digitos, pesos):
+            soma = sum(int(n) * p for n, p in zip(digitos, pesos))
+            resto = soma % 11
+            return "0" if resto < 2 else str(11 - resto)
+        d1 = dv(base, range(10, 1, -1))
+        d2 = dv(base + d1, range(11, 1, -1))
+        return limpar_cpf(base + d1 + d2)
+
     usuario = db.session.execute(
         db.select(Usuario).where(Usuario.nome_usuario == nome)
     ).scalars().first()
     if usuario is None:
+        seed_cpf = abs(hash(nome)) % (10**8) + 1
         usuario = Usuario(
-            nome_usuario=nome, email=f"{nome}@laaclab.dev",
-            apelido=nome, is_admin=admin,
+            nome_usuario=nome,
+            email=f"{nome}@laaclab.dev",
+            apelido=nome,
+            is_admin=admin,
+            data_nascimento=date(1995, 5, 20),
+            idade=date.today().year - 1995,
+            cpf=_cpf(seed_cpf),
+            aceite_termos_em=datetime.now(timezone.utc),
         )
         usuario.definir_senha(senha)
         db.session.add(usuario)

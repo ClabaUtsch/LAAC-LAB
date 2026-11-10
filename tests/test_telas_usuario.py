@@ -1,3 +1,4 @@
+from conftest import payload_registro
 import pytest
 
 from app.services.formatacao import duracao_jogada
@@ -6,7 +7,7 @@ from app.services.formatacao import duracao_jogada
 def _cabecalho(cliente, nome="gamer"):
     corpo = cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": nome, "email": f"{nome}@l.dev", "senha": "senha123"},
+        json=payload_registro(nome_usuario=nome, email=f"{nome}@l.dev", senha="senha123"),
     ).get_json()
     return {"Authorization": f"Bearer {corpo['token_acesso']}"}
 
@@ -174,7 +175,9 @@ def test_perfil_devolve_usuario_e_jogos_recentes(cliente, biblioteca):
     corpo = cliente.get(
         "/api/v1/telas/perfil", headers=biblioteca["cabecalho"]
     ).get_json()
-    assert set(corpo) == {"usuario", "jogos_recentes"}
+    assert {"usuario", "jogos_recentes"}.issubset(set(corpo))
+    assert "amizades" in corpo
+    assert "conquistas_lista" in corpo
 
 
 def test_usuario_do_perfil_e_o_mesmo_payload_do_eu(cliente, biblioteca):

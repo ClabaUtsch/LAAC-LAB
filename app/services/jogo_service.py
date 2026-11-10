@@ -199,6 +199,99 @@ class JogoService(ServicoBase):
     SEM_MERCH = "Sem informações de merch para este jogo."
     SEM_DATA = "—"
 
+    def _links_compra(self, jogo) -> list[dict]:
+        if isinstance(jogo.links_compra, list) and jogo.links_compra:
+            return [
+                {
+                    "loja": str(item.get("loja") or "Loja"),
+                    "url": str(item.get("url") or ""),
+                    "como": str(
+                        item.get("como")
+                        or "Acesse a loja oficial, escolha a edição e finalize a compra."
+                    ),
+                }
+                for item in jogo.links_compra
+                if isinstance(item, dict) and item.get("url")
+            ]
+
+        slug = (jogo.slug or "").strip()
+        links = []
+        steam = self._steam_appid(slug, jogo.nome)
+        if steam:
+            links.append(
+                {
+                    "loja": "Steam",
+                    "url": f"https://store.steampowered.com/app/{steam}",
+                    "como": (
+                        "Abra a página na Steam, faça login na sua conta, "
+                        "clique em Comprar/Adicionar ao carrinho e conclua o pagamento."
+                    ),
+                }
+            )
+        query = (jogo.nome or slug or "jogo").replace(" ", "+")
+        links.append(
+            {
+                "loja": "Busca em lojas",
+                "url": f"https://www.google.com/search?q={query}+comprar+jogo",
+                "como": (
+                    "Compare preços em lojas oficiais (Steam, Epic, PlayStation, Xbox, Nintendo) "
+                    "e compre apenas em canais confiáveis."
+                ),
+            }
+        )
+        return links
+
+    def _merch_itens(self, jogo) -> dict:
+        bruto = (jogo.merch or "").strip()
+        if bruto.startswith("["):
+            import json
+
+            try:
+                itens = json.loads(bruto)
+                if isinstance(itens, list) and itens:
+                    return {
+                        "texto": "",
+                        "itens": [
+                            {
+                                "titulo": str(i.get("titulo") or "Item"),
+                                "url": str(i.get("url") or ""),
+                            }
+                            for i in itens
+                            if isinstance(i, dict)
+                        ],
+                    }
+            except Exception:
+                pass
+        if bruto and bruto != self.SEM_MERCH:
+            return {"texto": bruto, "itens": []}
+        return {"texto": self.SEM_MERCH, "itens": []}
+
+    @staticmethod
+    def _steam_appid(slug: str, nome: str) -> int | None:
+        from pathlib import Path
+        import json
+
+        caminho = Path(__file__).resolve().parents[2] / "dados" / "jogos_steam.json"
+        if not caminho.exists():
+            return None
+        try:
+            catalogo = json.loads(caminho.read_text(encoding="utf-8"))
+        except Exception:
+            return None
+        alvo_slug = (slug or "").casefold()
+        alvo_nome = (nome or "").casefold()
+        for item in catalogo:
+            if not isinstance(item, dict):
+                continue
+            appid = item.get("steam_appid")
+            if not appid:
+                continue
+            if alvo_slug and (item.get("slug") or "").casefold() == alvo_slug:
+                return int(appid)
+            if alvo_nome and (item.get("name") or "").casefold() == alvo_nome:
+                return int(appid)
+        return None
+
     def montar_detalhe(
         self,
         jogo,
@@ -283,7 +376,8 @@ class JogoService(ServicoBase):
                 "curtidas": jogo.curtidas,
                 "descurtidas": jogo.descurtidas,
                 "conquistas": jogo.conquistas,
-                "merch": jogo.merch or self.SEM_MERCH,
+                "merch": self._merch_itens(jogo),
+                "links_compra": self._links_compra(jogo),
                 "tempo_para_zerar": tempos,
                 # Lista, igual ao bugômetro. Quem sabe quais relatos
                 # contam é o BugometroService — reimplementar a regra

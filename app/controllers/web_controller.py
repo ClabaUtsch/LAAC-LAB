@@ -26,6 +26,8 @@ PAGINAS_POR_ROTA = {
     "/explorar": "explorar.html",
     "/configuracao": "configuracao.html",
     "/ranking": "ranking.html",
+    "/recuperar-senha": "recuperar_senha.html",
+    "/redefinir-senha": "redefinir_senha.html",
 }
 
 
@@ -55,6 +57,10 @@ def criar_blueprint_web() -> Blueprint:
         `location.pathname`. É o que substitui o `data-slug` que o
         template Django injetava."""
         return _servir("jogo.html")
+
+    @bp.get("/perfil/<int:usuario_id>")
+    def pagina_perfil_alheio(usuario_id):
+        return _servir("perfil_publico.html")
 
     @bp.get("/estatico/<path:caminho>")
     def estatico(caminho):

@@ -1,3 +1,4 @@
+from conftest import payload_registro
 import pytest
 import uuid
 
@@ -539,7 +540,7 @@ def test_confirmar_bug_pela_api_ponta_a_ponta(app, sessao):
     cliente = app.test_client()
     entrada = cliente.post(
         "/api/auth/registro",
-        json={"nome_usuario": "votante", "email": "vt@l.dev", "senha": "senha123"},
+        json=payload_registro(nome_usuario="votante", email="vt@l.dev", senha="senha123"),
     ).get_json()
     cabecalho = {"Authorization": f"Bearer {entrada['token_acesso']}"}
 

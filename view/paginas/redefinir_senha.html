@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Redefinir senha · LaaCLab</title>
+  <link rel="stylesheet" href="/estatico/css/estilos.css">
+</head>
+<body data-tela="redefinir-senha" data-casca="auth">
+<!-- CASCA:INICIO -->
+  <div class="auth">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 3h6M10 3v6l-5.5 9.5A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3L14 9V3"/><path d="M7.5 15h9"/>
+      </svg>
+      <span>LaaC<span style="color:var(--brand)">Lab</span></span>
+    </div>
+<!-- CASCA:FIM -->
+    <div id="conteudo">
+      <h1>Nova senha</h1>
+      <p class="sub">Defina uma nova senha após a verificação por e-mail.</p>
+      <div class="err" id="erro-geral" hidden></div>
+      <div class="estado" id="ok" hidden></div>
+      <form id="form-redefinir" novalidate>
+        <div>
+          <label for="senha_nova">Nova senha</label>
+          <input type="password" id="senha_nova" autocomplete="new-password" required minlength="8">
+        </div>
+        <button type="submit" class="btn btn--primary">Salvar senha</button>
+      </form>
+      <p class="alt"><a href="/login">Ir para o login</a></p>
+    </div>
+<!-- CASCA:RODAPE:INICIO -->
+  </div>
+<!-- CASCA:RODAPE:FIM -->
+<script src="/estatico/js/api.js"></script>
+<script src="/estatico/js/casca.js"></script>
+<script src="/estatico/js/redefinir_senha.js"></script>
+</body>
+</html>
